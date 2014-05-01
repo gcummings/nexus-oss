@@ -34,6 +34,12 @@
       <scope>provided</scope>
     </dependency>
 
+    <dependency>
+      <groupId>io.kazuki</groupId>
+      <artifactId>kazuki-api</artifactId>
+      <scope>provided</scope>
+    </dependency>
+
     <!--
     <dependency>
       <groupId>org.sonatype.nexus.buildsupport</groupId>
@@ -60,15 +66,13 @@
     </dependency>
 
     <!--
-      TODO: This is purely for the DigesterUtils class, which apparently will be pulled out at some point.
+      TODO: This is for the DigesterUtils class, which apparently will be pulled out at some point, and also for slf4j.
       c.f. https://issues.sonatype.org/browse/NEXUS-6535
     -->
-    <!--
     <dependency>
       <groupId>org.sonatype.nexus</groupId>
       <artifactId>nexus-core</artifactId>
     </dependency>
-    -->
 
     <dependency>
       <groupId>org.json</groupId>
