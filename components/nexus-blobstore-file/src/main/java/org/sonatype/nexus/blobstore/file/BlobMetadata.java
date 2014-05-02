@@ -1,6 +1,5 @@
 package org.sonatype.nexus.blobstore.file;
 
-import java.nio.file.Path;
 import java.util.Map;
 
 import org.sonatype.nexus.blobstore.api.BlobId;
@@ -15,20 +14,13 @@ public class BlobMetadata
 {
   private BlobId blobId;
 
-  private boolean blobMarkedForDeletion = true;
-
-  // TODO Add cached metrics.
-
-  // TODO Consider adding the current file contentPath to the blob, that way we can gradually migrate from one storage
-  // layout to another
+  private boolean blobMarkedForDeletion;
 
   private Map<String, String> headers;
 
   private BlobMetrics metrics;
 
-  public BlobMetadata(final BlobId blobId,
-                      final Map<String, String> headers)
-  {
+  public BlobMetadata(final BlobId blobId, final Map<String, String> headers) {
     checkNotNull(blobId);
     checkNotNull(headers);
 

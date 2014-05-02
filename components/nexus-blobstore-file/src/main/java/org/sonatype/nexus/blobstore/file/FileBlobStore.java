@@ -3,6 +3,7 @@ package org.sonatype.nexus.blobstore.file;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
+import java.security.NoSuchAlgorithmException;
 import java.util.Map;
 
 import javax.annotation.Nullable;
@@ -17,11 +18,11 @@ import org.sonatype.nexus.blobstore.api.BlobStoreMetrics;
 import org.sonatype.nexus.blobstore.id.BlobIdFactory;
 
 import com.google.common.base.Preconditions;
+import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.base.Preconditions.checkState;
 
 /**
  * @since 3.0
@@ -43,6 +44,22 @@ public class FileBlobStore
 
   private BlobMetadataStore metadataStore;
 
+  public FileBlobStore(final String name, final BlobIdFactory blobIdFactory, final FilePathPolicy paths,
+                       final FileOperations fileOperations, final BlobMetadataStore metadataStore)
+  {
+    checkNotNull(name);
+    checkNotNull(blobIdFactory);
+    checkNotNull(paths);
+    checkNotNull(fileOperations);
+    checkNotNull(metadataStore);
+
+    this.name = name;
+    this.blobIdFactory = blobIdFactory;
+    this.paths = paths;
+    this.fileOperations = fileOperations;
+    this.metadataStore = metadataStore;
+  }
+
   @Override
   public Blob create(final InputStream blobData, final Map<String, String> headers) {
     checkNotNull(blobData);
@@ -54,13 +71,16 @@ public class FileBlobStore
     Preconditions.checkArgument(headers.containsKey(AUDIT_INFO_HEADER));
 
     try {
-      // Create a record of the attempt to store the blob, so if it fails we know we need to clean up
+      // If the storing of bytes fails, we record a reminder to clean up afterwards
       final BlobMetadata metadata = new BlobMetadata(blobId, headers);
+      metadata.setBlobMarkedForDeletion(true);
       metadataStore.add(metadata);
 
       logger.debug("Writing blob {} to {}", blobId, paths.forContent(blobId));
 
-      BlobMetrics metrics = storeBlob(blobId, blobData);
+      final StreamMetrics streamMetrics = storeBlob(blobId, blobData);
+
+      BlobMetrics metrics = createBlobMetrics(streamMetrics);
 
       final FileBlob blob = new FileBlob(blobId, headers, paths.forContent(blobId), metrics);
       if (listener != null) {
@@ -68,6 +88,7 @@ public class FileBlobStore
       }
 
       metadata.setMetrics(metrics);
+      // Storing the content went fine, so we can now unmark this for deletion
       metadata.setBlobMarkedForDeletion(false);
       metadataStore.update(metadata);
 
@@ -76,6 +97,13 @@ public class FileBlobStore
     catch (IOException e) {
       throw new BlobStoreException(e, getName(), blobId);
     }
+  }
+
+  private BlobMetrics createBlobMetrics(final StreamMetrics streamMetrics) {
+    checkNotNull(streamMetrics);
+    final DateTime creationTime = new DateTime();
+
+    return new FileBlobMetrics(creationTime, streamMetrics.getSHA1(), streamMetrics.getSize());
   }
 
   @Nullable
@@ -181,12 +209,14 @@ public class FileBlobStore
     return listener;
   }
 
-  private BlobMetrics storeBlob(final BlobId blobId, final InputStream blobData) throws IOException {
-    BlobMetrics metrics = null;
-
-    // write the content to disk
-    fileOperations.create(paths.forHeader(blobId), blobData);
-    return metrics;
+  private StreamMetrics storeBlob(final BlobId blobId, final InputStream blobData) throws IOException {
+    try {
+      // write the content to disk
+      return fileOperations.create(paths.forContent(blobId), blobData);
+    }
+    catch (NoSuchAlgorithmException e) {
+      throw new BlobStoreException(e, getName(), blobId);
+    }
   }
 
   private void checkExists(final Path path, BlobId blobId) throws IOException {
@@ -196,6 +226,7 @@ public class FileBlobStore
       throw new BlobStoreException("Blob has been deleted.", getName(), blobId);
     }
   }
+
 
   class FileBlob
       implements Blob
@@ -249,4 +280,34 @@ public class FileBlobStore
     }
   }
 
+  private static class FileBlobMetrics
+      implements BlobMetrics
+  {
+    private final DateTime creationTime;
+
+    private final String SHA1Hash;
+
+    private final long contentSize;
+
+    private FileBlobMetrics(final DateTime creationTime, final String SHA1Hash, final long contentSize) {
+      this.creationTime = creationTime;
+      this.SHA1Hash = SHA1Hash;
+      this.contentSize = contentSize;
+    }
+
+    @Override
+    public DateTime getCreationTime() {
+      return creationTime;
+    }
+
+    @Override
+    public String getSHA1Hash() {
+      return SHA1Hash;
+    }
+
+    @Override
+    public long getContentSize() {
+      return contentSize;
+    }
+  }
 }

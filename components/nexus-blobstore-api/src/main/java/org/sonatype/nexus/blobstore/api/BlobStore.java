@@ -45,8 +45,8 @@ public interface BlobStore
    * <li>{@link #AUDIT_INFO_HEADER}</li>
    * </ul>
    *
-   * @throws BlobStoreException (or a subclass) if the input stream can't be read correctly, if mandatory headers are
-   *                            missing.
+   * @throws BlobStoreException       (or a subclass) if the input stream can't be read correctly
+   * @throws IllegalArgumentException if mandatory headers are missing
    */
   Blob create(InputStream blobData, Map<String, String> headers);
 
