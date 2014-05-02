@@ -19,6 +19,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.security.NoSuchAlgorithmException;
 import java.util.Date;
 
 import org.sonatype.nexus.util.DigesterUtils;
@@ -36,13 +37,17 @@ public class SimpleFileOperations
   private static final Logger logger = LoggerFactory.getLogger(FileBlobStore.class);
 
   @Override
-  public void create(final Path path, final InputStream data) throws IOException {
+  public StreamMetrics create(final Path path, final InputStream data) throws IOException, NoSuchAlgorithmException {
     ensureDirectoryExists(path.getParent());
+
+    final MetricsInputStream metrics = MetricsInputStream.metricsInputStream(data, "SHA1");
 
     try (final OutputStream outputStream = Files.newOutputStream(path, StandardOpenOption.CREATE_NEW)) {
       ByteStreams.copy(data, outputStream);
       data.close();
     }
+
+    return new StreamMetrics(metrics.getSize(), metrics.getMessageDigest());
   }
 
   @Override
@@ -76,7 +81,7 @@ public class SimpleFileOperations
 
   @Override
   public boolean delete(final Path path) throws IOException {
-      return Files.deleteIfExists(path);
+    return Files.deleteIfExists(path);
   }
 
   @Override

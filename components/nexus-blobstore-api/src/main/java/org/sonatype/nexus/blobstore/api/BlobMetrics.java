@@ -30,18 +30,9 @@ public interface BlobMetrics
    */
   String getSHA1Hash();
 
-  /**
-   * The length, in bytes, of the headers.  This ignores storage considerations like block size.
-   */
-  long getHeaderSize();
-
-  /**
+   /**
    * The byte length of the raw content blob, excluding storage considerations like block size.
    */
   long getContentSize();
 
-  /**
-   * The length of the header plus content, in bytes.
-   */
-  long getTotalSize();
 }
