@@ -10,12 +10,12 @@
  * of Sonatype, Inc. Apache Maven is a trademark of the Apache Software Foundation. M2eclipse is a trademark of the
  * Eclipse Foundation. All other trademarks are the property of their respective owners.
  */
-package org.sonatype.nexus.apachehttpclient.page;
+package org.sonatype.nexus.apachehttpclient;
 
 import java.net.SocketException;
 
-import org.sonatype.nexus.apachehttpclient.page.Page.PageContext;
-import org.sonatype.nexus.apachehttpclient.page.Page.UnexpectedPageResponse;
+import org.sonatype.nexus.apachehttpclient.Page.PageContext;
+import org.sonatype.nexus.apachehttpclient.Page.UnexpectedPageResponse;
 import org.sonatype.sisu.litmus.testsupport.TestSupport;
 import org.sonatype.tests.http.server.fluent.Behaviours;
 import org.sonatype.tests.http.server.fluent.Server;
@@ -26,6 +26,9 @@ import org.junit.Test;
 import static org.hamcrest.MatcherAssert.*;
 import static org.hamcrest.Matchers.*;
 
+/**
+ * Tests for {@link Page}.
+ */
 public class PageTest
     extends TestSupport
 {

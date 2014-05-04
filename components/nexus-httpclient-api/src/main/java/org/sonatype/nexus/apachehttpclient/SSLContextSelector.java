@@ -12,8 +12,6 @@
  */
 package org.sonatype.nexus.apachehttpclient;
 
-import java.util.List;
-
 import javax.net.ssl.SSLContext;
 
 import org.apache.http.protocol.HttpContext;
@@ -26,8 +24,9 @@ import org.apache.http.protocol.HttpContext;
 public interface SSLContextSelector
 {
   /**
-   * Returns the desired {@link SSLContext} to be used or {@code null} if no selection possible (or available). In this
-   * case, HTTP client will use the "default" SSL context, see {@link Hc4ProviderImpl#createClientConnectionManager(List)}.
+   * Returns the desired {@link SSLContext} to be used or {@code null} if no selection possible (or available).
+   *
+   * In this case, HTTP client will use the "default" SSL context.
    */
   SSLContext select(HttpContext context);
 }

@@ -21,7 +21,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import org.sonatype.nexus.apachehttpclient.page.Page;
+import org.sonatype.nexus.apachehttpclient.Page;
 
 /**
  * Scraper for remote Nexus instances that will scrape only if remote is for sure recognized as Nexus instance, and URL

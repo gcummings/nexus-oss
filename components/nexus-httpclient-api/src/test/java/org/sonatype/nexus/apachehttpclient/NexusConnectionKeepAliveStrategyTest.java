@@ -31,7 +31,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 
 /**
- * Test for NexusConnectionKeepAliveStrategy.
+ * Test for {@link NexusConnectionKeepAliveStrategy}.
  */
 public class NexusConnectionKeepAliveStrategyTest
     extends TestSupport

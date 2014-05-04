@@ -26,9 +26,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 /**
- * {@link EvictingThread} UTs.
- *
- * @since 2.2
+ * Tests for {@link EvictingThread}.
  */
 public class EvictingThreadTest
     extends TestSupport

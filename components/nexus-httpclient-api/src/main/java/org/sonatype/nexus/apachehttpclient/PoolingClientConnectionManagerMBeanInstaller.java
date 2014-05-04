@@ -25,7 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * An wrapper {@link Hc4Provider} that automatically registers / unregisters JMX MBeans for each created
+ * Automatically registers / unregisters JMX MBeans for each created
  * {@link HttpClient}s and {@link PoolingHttpClientConnectionManager}.
  *
  * @since 2.2
