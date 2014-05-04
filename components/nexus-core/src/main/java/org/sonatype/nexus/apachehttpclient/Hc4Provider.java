@@ -12,7 +12,6 @@
  */
 package org.sonatype.nexus.apachehttpclient;
 
-import org.sonatype.nexus.configuration.application.ApplicationConfiguration;
 import org.sonatype.nexus.proxy.storage.remote.RemoteStorageContext;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -67,8 +66,7 @@ public interface Hc4Provider
    * If you need explicit control over connection reuse, or must have one a client
    * that reuse connections at any cause, use method {@link #createHttpClient(boolean)} instead.
    *
-   * @return HttpClient4x pre-configured instance, that uses global {@link RemoteStorageContext} to be configured
-   * (see {@link ApplicationConfiguration#getGlobalRemoteStorageContext()}).
+   * @return HttpClient4x pre-configured instance, that uses global {@link RemoteStorageContext} to be configured.
    */
   HttpClient createHttpClient();
 
@@ -86,8 +84,8 @@ public interface Hc4Provider
    *
    * @param reuseConnections if {@code true} the returned HTTP client will reuse connections (and hence, support
    *                         HTTP features as Keep Alive, etc).
-   * @return HttpClient4x pre-configured instance, that uses global {@link RemoteStorageContext} to be configured
-   * (see {@link ApplicationConfiguration#getGlobalRemoteStorageContext()}).
+   * @return HttpClient4x pre-configured instance, that uses global {@link RemoteStorageContext} to be configured.
+   *
    * @since 2.7.2
    */
   HttpClient createHttpClient(boolean reuseConnections);

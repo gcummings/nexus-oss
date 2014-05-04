@@ -2,7 +2,6 @@ package org.sonatype.nexus.apachehttpclient;
 
 import java.io.IOException;
 
-import org.sonatype.nexus.apachehttpclient.Hc4Provider;
 import org.sonatype.nexus.apachehttpclient.Page.PageContext;
 import org.sonatype.nexus.proxy.repository.ProxyRepository;
 
