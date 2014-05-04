@@ -33,7 +33,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Component for creating pre-configured Apache HttpClient4x instances in Nexus.
  *
- * @author cstamas
  * @since 2.2
  */
 public interface Hc4Provider
