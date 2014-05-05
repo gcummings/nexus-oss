@@ -256,11 +256,10 @@ public class Hc4ProviderImpl
 
   @Override
   public HttpClient createHttpClient() {
-    boolean reuseConnections = reuseConnectionsNeeded(globalRemoteStorageContextProvider.get());
-
     final Builder builder = prepareHttpClient(globalRemoteStorageContextProvider.get());
 
     // Maybe disable connection reuse
+    boolean reuseConnections = reuseConnectionsNeeded(globalRemoteStorageContextProvider.get());
     if (!reuseConnections) {
       builder.getHttpClientBuilder().setConnectionReuseStrategy(new NoConnectionReuseStrategy());
     }
