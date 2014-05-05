@@ -42,7 +42,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.eventbus.Subscribe;
-import com.google.common.primitives.Ints;
 import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.Credentials;
@@ -132,7 +131,7 @@ public class Hc4ProviderImpl
   /**
    * Default pool timeout: 30 seconds.
    */
-  private static final long CONNECTION_POOL_TIMEOUT_DEFAULT = TimeUnit.SECONDS.toMillis(30);
+  private static final int CONNECTION_POOL_TIMEOUT_DEFAULT = (int) TimeUnit.SECONDS.toMillis(30);
 
   // ==
 
@@ -147,6 +146,26 @@ public class Hc4ProviderImpl
    * The low level core event bus.
    */
   private final EventBus eventBus;
+
+  private static class ManagedClientConnectionManager
+      extends PoolingHttpClientConnectionManager
+  {
+    public ManagedClientConnectionManager(final Registry<ConnectionSocketFactory> schemeRegistry) {
+      super(schemeRegistry);
+    }
+
+    /**
+     * Do nothing in order to avoid unwanted shutdown of shared connection manager.
+     */
+    @Override
+    public void shutdown() {
+      // empty
+    }
+
+    private void _shutdown() {
+      super.shutdown();
+    }
+  }
 
   /**
    * Shared client connection manager.
@@ -174,53 +193,37 @@ public class Hc4ProviderImpl
     this.userAgentBuilder = checkNotNull(userAgentBuilder);
     this.jmxInstaller = checkNotNull(jmxInstaller);
     this.sharedConnectionManager = createClientConnectionManager(selectors);
-    this.evictingThread = new EvictingThread(sharedConnectionManager, getConnectionPoolIdleTime());
+
+    long connectedPoolIdleTime = SystemPropertiesHelper.getLong(CONNECTION_POOL_IDLE_TIME_KEY, CONNECTION_POOL_IDLE_TIME_DEFAULT);
+    this.evictingThread = new EvictingThread(sharedConnectionManager, connectedPoolIdleTime);
     this.evictingThread.start();
+
     this.eventBus = checkNotNull(eventBus);
     this.eventBus.register(this);
+
     this.jmxInstaller.register(sharedConnectionManager);
-
-    log.info(
-        "Started (connectionPoolMaxSize {}, connectionPoolSize {}, connectionPoolIdleTime {} ms, connectionPoolTimeout {} ms, keepAliveMaxDuration {} ms)",
-        getConnectionPoolMaxSize(),
-        getConnectionPoolSize(),
-        getConnectionPoolIdleTime(),
-        getConnectionPoolTimeout(),
-        getKeepAliveMaxDuration()
-    );
   }
 
-  // configuration
+  private ManagedClientConnectionManager createClientConnectionManager(final List<SSLContextSelector> selectors)
+      throws IllegalStateException
+  {
+    final Registry<ConnectionSocketFactory> registry = RegistryBuilder.<ConnectionSocketFactory>create()
+        .register("http", PlainConnectionSocketFactory.getSocketFactory())
+        .register("https", new NexusSSLConnectionSocketFactory(
+            (javax.net.ssl.SSLSocketFactory) javax.net.ssl.SSLSocketFactory.getDefault(),
+            SSLConnectionSocketFactory.BROWSER_COMPATIBLE_HOSTNAME_VERIFIER, selectors)
+        ).build();
 
-  /**
-   * Returns the pool max size.
-   */
-  protected int getConnectionPoolMaxSize() {
-    return SystemPropertiesHelper.getInteger(CONNECTION_POOL_MAX_SIZE_KEY, CONNECTION_POOL_MAX_SIZE_DEFAULT);
+    final ManagedClientConnectionManager connManager = new ManagedClientConnectionManager(registry);
+    final int maxConnectionCount = SystemPropertiesHelper.getInteger(CONNECTION_POOL_MAX_SIZE_KEY, CONNECTION_POOL_MAX_SIZE_DEFAULT);
+    final int poolSize = SystemPropertiesHelper.getInteger(CONNECTION_POOL_SIZE_KEY, CONNECTION_POOL_SIZE_DEFAULT);
+    final int perRouteConnectionCount = Math.min(poolSize, maxConnectionCount);
+
+    connManager.setMaxTotal(maxConnectionCount);
+    connManager.setDefaultMaxPerRoute(perRouteConnectionCount);
+
+    return connManager;
   }
-
-  /**
-   * Returns the pool size per route.
-   */
-  protected int getConnectionPoolSize() {
-    return SystemPropertiesHelper.getInteger(CONNECTION_POOL_SIZE_KEY, CONNECTION_POOL_SIZE_DEFAULT);
-  }
-
-  /**
-   * Returns the connection pool idle (idle as unused but pooled) time in milliseconds.
-   */
-  protected long getConnectionPoolIdleTime() {
-    return SystemPropertiesHelper.getLong(CONNECTION_POOL_IDLE_TIME_KEY, CONNECTION_POOL_IDLE_TIME_DEFAULT);
-  }
-
-  /**
-   * Returns the pool timeout in milliseconds.
-   */
-  protected long getConnectionPoolTimeout() {
-    return SystemPropertiesHelper.getLong(CONNECTION_POOL_TIMEOUT_KEY, CONNECTION_POOL_TIMEOUT_DEFAULT);
-  }
-
-  // ==
 
   /**
    * Performs a clean shutdown on this component, it kills the evicting thread and shuts down the shared connection
@@ -235,15 +238,10 @@ public class Hc4ProviderImpl
   }
 
   @Subscribe
-  public void onEvent(final NexusStoppedEvent evt) {
+  public void onEvent(final NexusStoppedEvent event) {
     shutdown();
   }
 
-  // ==
-
-  /**
-   * Safety net to prevent thread leaks (in non-production environment, mainly for ITs or UTs).
-   */
   @Override
   protected void finalize() throws Throwable {
     try {
@@ -254,27 +252,12 @@ public class Hc4ProviderImpl
     }
   }
 
-  // == Hc4Provider API
+// == Hc4Provider API
 
   @Override
   public HttpClient createHttpClient() {
-    // connection manager will cap the max count of connections, but with this below
-    // we get rid of pooling. Pooling is used in Proxy repositories only, as all other
-    // components using the "shared" httpClient should not produce hiw rate of requests
-    // anyway, as they usually happen per user interactions (GPG gets keys are staging repo is closed, if not cached
-    // yet, LVO gets info when UI's main window is loaded into user's browser, etc
-    // ==
-    // NEXUS-6220: This story above is mainly true and is basically "resource optimization", as
-    // this method is used by various "side services" (typically LVO etc), where single request is made
-    // with huge pauses in between. Still, connection reuse is needed in some rare cases,
-    // like when you have NTLM proxy in between Nexus and the Internet. So, let ask HC4 provider,
-    // does it "think" we still need connection reuse or not.
     boolean reuseConnections = reuseConnectionsNeeded(globalRemoteStorageContextProvider.get());
-    return createHttpClient(reuseConnections);
-  }
 
-  @Override
-  public HttpClient createHttpClient(final boolean reuseConnections) {
     final Builder builder = prepareHttpClient(globalRemoteStorageContextProvider.get());
 
     // Maybe disable connection reuse
@@ -296,7 +279,8 @@ public class Hc4ProviderImpl
     builder.getHttpClientBuilder().setConnectionManager(sharedConnectionManager);
     builder.getHttpClientBuilder().addInterceptorFirst(new ResponseContentEncoding());
 
-    builder.getSocketConfigBuilder().setSoTimeout(getSoTimeout(context));
+    // SO_TIMEOUT is same as connection timeout
+    builder.getSocketConfigBuilder().setSoTimeout(getConnectionTimeout(context));
 
     builder.getConnectionConfigBuilder().setBufferSize(8 * 1024);
 
@@ -304,74 +288,34 @@ public class Hc4ProviderImpl
     builder.getRequestConfigBuilder().setExpectContinueEnabled(false);
     builder.getRequestConfigBuilder().setStaleConnectionCheckEnabled(false);
     builder.getRequestConfigBuilder().setConnectTimeout(getConnectionTimeout(context));
-    builder.getRequestConfigBuilder().setSocketTimeout(getSoTimeout(context));
+
+    // SO_TIMEOUT is same as connection timeout
+    builder.getRequestConfigBuilder().setSocketTimeout(getConnectionTimeout(context));
 
     builder.getHttpClientBuilder().setUserAgent(userAgentBuilder.formatUserAgentString(context));
 
-    builder.getRequestConfigBuilder().setConnectionRequestTimeout(Ints.checkedCast(getConnectionPoolTimeout()));
-
+    int poolTimeout = SystemPropertiesHelper.getInteger(CONNECTION_POOL_TIMEOUT_KEY, CONNECTION_POOL_TIMEOUT_DEFAULT);
+    builder.getRequestConfigBuilder().setConnectionRequestTimeout(poolTimeout);
 
     applyAuthenticationConfig(builder, context.getRemoteAuthenticationSettings(), null);
     applyProxyConfig(builder, context.getRemoteProxySettings());
+
     // obey the given retries count and apply it to client.
     final int retries =
         context.getRemoteConnectionSettings() != null
             ? context.getRemoteConnectionSettings().getRetrievalRetryCount()
             : 0;
     builder.getHttpClientBuilder().setRetryHandler(new StandardHttpRequestRetryHandler(retries, false));
-    builder.getHttpClientBuilder()
-        .setKeepAliveStrategy(new NexusConnectionKeepAliveStrategy(getKeepAliveMaxDuration()));
+
+    long keepAliveDuration = SystemPropertiesHelper.getLong(KEEP_ALIVE_MAX_DURATION_KEY, KEEP_ALIVE_MAX_DURATION_DEFAULT);
+    builder.getHttpClientBuilder().setKeepAliveStrategy(new NexusConnectionKeepAliveStrategy(keepAliveDuration));
+
     return builder;
-  }
-
-  // ==
-
-  protected ManagedClientConnectionManager createClientConnectionManager(final List<SSLContextSelector> selectors)
-      throws IllegalStateException
-  {
-    final Registry<ConnectionSocketFactory> registry = RegistryBuilder.<ConnectionSocketFactory>create()
-        .register("http", PlainConnectionSocketFactory.getSocketFactory())
-        .register("https", new NexusSSLConnectionSocketFactory(
-            (javax.net.ssl.SSLSocketFactory) javax.net.ssl.SSLSocketFactory.getDefault(),
-            SSLConnectionSocketFactory.BROWSER_COMPATIBLE_HOSTNAME_VERIFIER, selectors)).build();
-
-    final ManagedClientConnectionManager connManager = new ManagedClientConnectionManager(registry);
-    final int maxConnectionCount = getConnectionPoolMaxSize();
-    final int perRouteConnectionCount = Math.min(getConnectionPoolSize(), maxConnectionCount);
-
-    connManager.setMaxTotal(maxConnectionCount);
-    connManager.setDefaultMaxPerRoute(perRouteConnectionCount);
-
-    return connManager;
-  }
-
-  private class ManagedClientConnectionManager
-      extends PoolingHttpClientConnectionManager
-  {
-    public ManagedClientConnectionManager(final Registry<ConnectionSocketFactory> schemeRegistry) {
-      super(schemeRegistry);
-    }
-
-    @Override
-    public void shutdown() {
-      // do nothing in order to avoid unwanted shutdown of shared connection manager
-    }
-
-    private void _shutdown() {
-      super.shutdown();
-    }
   }
 
   //
   // TODO: Extracted From Hc4ProviderBase, cleanup and organize
   //
-
-  /**
-   * Returns the maximum Keep-Alive duration in milliseconds.
-   */
-  private long getKeepAliveMaxDuration() {
-    return SystemPropertiesHelper.getLong(KEEP_ALIVE_MAX_DURATION_KEY, KEEP_ALIVE_MAX_DURATION_DEFAULT);
-  }
 
   /**
    * Returns the connection timeout in milliseconds. The timeout until connection is established.
@@ -385,16 +329,6 @@ public class Hc4ProviderImpl
       return 1000;
     }
   }
-
-  /**
-   * Returns the SO_SOCKET timeout in milliseconds. The timeout for waiting for data on established connection.
-   */
-  private int getSoTimeout(final RemoteStorageContext context) {
-    // this parameter is actually set from #getConnectionTimeout
-    return getConnectionTimeout(context);
-  }
-
-  // ==
 
   /**
    * Returns {@code true} if passed in {@link RemoteStorageContext} contains some configuration element that
