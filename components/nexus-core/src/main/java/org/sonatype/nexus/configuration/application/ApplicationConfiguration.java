@@ -85,7 +85,10 @@ public interface ApplicationConfiguration
 
   /**
    * Gets the top level remote storage context.
+   *
+   * @deprecated Use {@code @Named("global") Provider<RemoteStorageContext>} instead.
    */
+  @Deprecated
   RemoteStorageContext getGlobalRemoteStorageContext();
 
   /**
