@@ -23,6 +23,7 @@ import javax.inject.Singleton;
 
 import org.sonatype.nexus.apachehttpclient.Hc4Provider;
 import org.sonatype.nexus.apachehttpclient.Hc4Provider.Builder;
+import org.sonatype.nexus.apachehttpclient.RemoteStorageContextCustomizer;
 import org.sonatype.nexus.proxy.repository.ProxyRepository;
 import org.sonatype.nexus.proxy.storage.remote.RemoteItemNotFoundException;
 import org.sonatype.nexus.proxy.storage.remote.RemoteStorageContext;
@@ -75,7 +76,7 @@ public class HttpClientManagerImpl
   public HttpClient create(final ProxyRepository proxyRepository, final RemoteStorageContext ctx) {
     checkNotNull(proxyRepository);
     checkNotNull(ctx);
-    final Builder builder = hc4Provider.prepareHttpClient(ctx);
+    final Builder builder = hc4Provider.prepareHttpClient(new RemoteStorageContextCustomizer(ctx));
     configure(proxyRepository, ctx, builder);
     return builder.build();
   }

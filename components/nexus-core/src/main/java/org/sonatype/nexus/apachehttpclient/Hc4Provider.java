@@ -30,6 +30,8 @@ import org.apache.http.protocol.HttpContext;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+// FIXME: Rename to HttpClientFactory
+
 /**
  * Component for creating pre-configured Apache HttpClient4x instances in Nexus.
  *
@@ -53,47 +55,23 @@ public interface Hc4Provider
    */
   String HTTP_CTX_KEY_REPOSITORY = Hc4Provider.class.getName() + ".repository";
 
-  /**
-   * Returns a new pre-configured instance of Apache HttpClient4x. This call will assemble a new instance of client
-   * per every invocation. Created instances should be kept only during request execution, and should not be kept for
-   * reuse over longer time span. Rather keep reference to this component and re-create client when needed. On Nexus
-   * configuration changes, the client needs reconfiguration too, hence if you keep a reference to the created
-   * client, you might end up with stale and non-working client (for example, global HTTP Proxy got changed between
-   * your invocation of this method and when you want to perform HTTP request. Your instance would still try to talk to
-   * HTTP proxy set in time when you created the instance). For resource optimization's sake, HttpClient instance
-   * returned by this method  <em>does not support Keep-Alive</em> (unless configuration needs it).
-   *
-   * @return HttpClient4x pre-configured instance, that uses global {@link RemoteStorageContext} to be configured.
-   */
+  // TODO: Rename: create();
+
   HttpClient createHttpClient();
 
-  /**
-   * Advanced. Primarily to be used by subsystem that wants full control over the HTTP Client, it only uses the
-   * "factory"-like features of this provider. In short: it wants to have pre-configured instance adjusted to passed
-   * in {@link RemoteStorageContext}, namely with authentication and HTTP proxy configuration set. So far, that
-   * subsystem is Nexus Proxy repositories. The created {@link HttpClient} will use the shared
-   * {@link HttpClientConnectionManager} managed by this component, so instances created with this method must not be
-   * managed or shutdown!
-   *
-   * @param context to source connection parameters from.
-   * @return HttpClient4x pre-configured instance, that uses passed {@link RemoteStorageContext} to be configured.
-   */
-  HttpClient createHttpClient(RemoteStorageContext context);
+  // TODO: rename: create(Customizer)
 
-  /**
-   * Prepares but does not build a Builder, allowing extra configuration to be applied to it by caller.
-   */
-  Builder prepareHttpClient(RemoteStorageContext context);
+  HttpClient createHttpClient(Customizer customizer);
 
-  /**
-   * Builder carries not-yet built HttpClient parts and configuration, enabling to have it passed around to apply
-   * configuration changes on it before client is finally built. After having built {@link HttpClient}, the returned
-   * instance is immutable and does not expose getters either for various members like pool etc. Still, this instance
-   * of Builder might be reused to create multiple clients, but in that case care must be take to apply reusable
-   * parts (ie. if connection manager is applied, it has to be reusable too).
-   *
-   * @since 2.8
-   */
+  // TODO: rename: prepare(Customizer)
+
+  Builder prepareHttpClient(Customizer customizer);
+
+  public static interface Customizer
+  {
+    void customize(Builder builder);
+  }
+
   public static class Builder
   {
     private final HttpClientBuilder httpClientBuilder;

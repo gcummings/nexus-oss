@@ -252,14 +252,15 @@ public class Hc4ProviderImpl
     }
   }
 
-// == Hc4Provider API
+  // == Hc4Provider API
 
   @Override
   public HttpClient createHttpClient() {
-    final Builder builder = prepareHttpClient(globalRemoteStorageContextProvider.get());
+    RemoteStorageContext context = globalRemoteStorageContextProvider.get();
+    Builder builder = prepareHttpClient(new RemoteStorageContextCustomizer(context));
 
-    // Maybe disable connection reuse
-    boolean reuseConnections = reuseConnectionsNeeded(globalRemoteStorageContextProvider.get());
+    // FIXME: Why is this here and not general?
+    boolean reuseConnections = reuseConnectionsNeeded(context);
     if (!reuseConnections) {
       builder.getHttpClientBuilder().setConnectionReuseStrategy(new NoConnectionReuseStrategy());
     }
@@ -267,77 +268,6 @@ public class Hc4ProviderImpl
     return builder.build();
   }
 
-  @Override
-  public HttpClient createHttpClient(final RemoteStorageContext context) {
-    return prepareHttpClient(context).build();
-  }
-
-  @Override
-  public Builder prepareHttpClient(final RemoteStorageContext context) {
-    final Builder builder = new Builder();
-    builder.getHttpClientBuilder().setConnectionManager(sharedConnectionManager);
-    builder.getHttpClientBuilder().addInterceptorFirst(new ResponseContentEncoding());
-
-    // SO_TIMEOUT is same as connection timeout
-    builder.getSocketConfigBuilder().setSoTimeout(getConnectionTimeout(context));
-
-    builder.getConnectionConfigBuilder().setBufferSize(8 * 1024);
-
-    builder.getRequestConfigBuilder().setCookieSpec(CookieSpecs.IGNORE_COOKIES);
-    builder.getRequestConfigBuilder().setExpectContinueEnabled(false);
-    builder.getRequestConfigBuilder().setStaleConnectionCheckEnabled(false);
-    builder.getRequestConfigBuilder().setConnectTimeout(getConnectionTimeout(context));
-
-    // SO_TIMEOUT is same as connection timeout
-    builder.getRequestConfigBuilder().setSocketTimeout(getConnectionTimeout(context));
-
-    builder.getHttpClientBuilder().setUserAgent(userAgentBuilder.formatUserAgentString(context));
-
-    int poolTimeout = SystemPropertiesHelper.getInteger(CONNECTION_POOL_TIMEOUT_KEY, CONNECTION_POOL_TIMEOUT_DEFAULT);
-    builder.getRequestConfigBuilder().setConnectionRequestTimeout(poolTimeout);
-
-    applyAuthenticationConfig(builder, context.getRemoteAuthenticationSettings(), null);
-    applyProxyConfig(builder, context.getRemoteProxySettings());
-
-    // obey the given retries count and apply it to client.
-    final int retries =
-        context.getRemoteConnectionSettings() != null
-            ? context.getRemoteConnectionSettings().getRetrievalRetryCount()
-            : 0;
-    builder.getHttpClientBuilder().setRetryHandler(new StandardHttpRequestRetryHandler(retries, false));
-
-    long keepAliveDuration = SystemPropertiesHelper.getLong(KEEP_ALIVE_MAX_DURATION_KEY, KEEP_ALIVE_MAX_DURATION_DEFAULT);
-    builder.getHttpClientBuilder().setKeepAliveStrategy(new NexusConnectionKeepAliveStrategy(keepAliveDuration));
-
-    return builder;
-  }
-
-  //
-  // TODO: Extracted From Hc4ProviderBase, cleanup and organize
-  //
-
-  /**
-   * Returns the connection timeout in milliseconds. The timeout until connection is established.
-   */
-  private int getConnectionTimeout(final RemoteStorageContext context) {
-    if (context.getRemoteConnectionSettings() != null) {
-      return context.getRemoteConnectionSettings().getConnectionTimeout();
-    }
-    else {
-      // see DefaultRemoteConnectionSetting
-      return 1000;
-    }
-  }
-
-  /**
-   * Returns {@code true} if passed in {@link RemoteStorageContext} contains some configuration element that
-   * does require connection reuse (typically remote NTLM authentication or proxy with NTLM authentication set).
-   *
-   * @param context the remote storage context to test for need of reused connections.
-   * @return {@code true} if connection reuse is required according to remote storage context.
-   *
-   * @since 2.7.2
-   */
   @VisibleForTesting
   boolean reuseConnectionsNeeded(final RemoteStorageContext context) {
     // return true if any of the auth is NTLM based, as NTLM must have keep-alive to work
@@ -361,110 +291,33 @@ public class Hc4ProviderImpl
     return false;
   }
 
-  @VisibleForTesting
-  void applyAuthenticationConfig(final Builder builder,
-                                 final RemoteAuthenticationSettings ras,
-                                 final HttpHost proxyHost)
-  {
-    if (ras != null) {
-      String authScope = "target";
-      if (proxyHost != null) {
-        authScope = proxyHost.toHostString() + " proxy";
-      }
-
-      final List<String> authorisationPreference = Lists.newArrayListWithExpectedSize(3);
-      authorisationPreference.add(AuthSchemes.DIGEST);
-      authorisationPreference.add(AuthSchemes.BASIC);
-      Credentials credentials = null;
-      if (ras instanceof ClientSSLRemoteAuthenticationSettings) {
-        throw new IllegalArgumentException("SSL client authentication not yet supported!");
-      }
-      else if (ras instanceof NtlmRemoteAuthenticationSettings) {
-        final NtlmRemoteAuthenticationSettings nras = (NtlmRemoteAuthenticationSettings) ras;
-        // Using NTLM auth, adding it as first in policies
-        authorisationPreference.add(0, AuthSchemes.NTLM);
-        log.debug("{} authentication setup for NTLM domain '{}'", authScope, nras.getNtlmDomain());
-        credentials = new NTCredentials(
-            nras.getUsername(), nras.getPassword(), nras.getNtlmHost(), nras.getNtlmDomain()
-        );
-      }
-      else if (ras instanceof UsernamePasswordRemoteAuthenticationSettings) {
-        final UsernamePasswordRemoteAuthenticationSettings uras =
-            (UsernamePasswordRemoteAuthenticationSettings) ras;
-        log.debug("{} authentication setup for remote storage with username '{}'", authScope,
-            uras.getUsername());
-        credentials = new UsernamePasswordCredentials(uras.getUsername(), uras.getPassword());
-      }
-
-      if (credentials != null) {
-        if (proxyHost != null) {
-          builder.setCredentials(new AuthScope(proxyHost), credentials);
-          builder.getRequestConfigBuilder().setProxyPreferredAuthSchemes(authorisationPreference);
-        }
-        else {
-          builder.setCredentials(AuthScope.ANY, credentials);
-          builder.getRequestConfigBuilder().setTargetPreferredAuthSchemes(authorisationPreference);
-        }
-      }
-    }
+  @Override
+  public HttpClient createHttpClient(final Customizer customizer) {
+    return prepareHttpClient(customizer).build();
   }
 
-  /**
-   * @since 2.6
-   */
-  @VisibleForTesting
-  void applyProxyConfig(final Builder builder, final RemoteProxySettings remoteProxySettings) {
-    if (remoteProxySettings != null
-        && remoteProxySettings.getHttpProxySettings() != null
-        && remoteProxySettings.getHttpProxySettings().isEnabled()) {
-      final Map<String, HttpHost> proxies = Maps.newHashMap();
+  @Override
+  public Builder prepareHttpClient(final Customizer customizer) {
+    final Builder builder = new Builder();
 
-      final HttpHost httpProxy = new HttpHost(
-          remoteProxySettings.getHttpProxySettings().getHostname(),
-          remoteProxySettings.getHttpProxySettings().getPort()
-      );
-      applyAuthenticationConfig(
-          builder, remoteProxySettings.getHttpProxySettings().getProxyAuthentication(), httpProxy
-      );
+    // dependencies
+    builder.getHttpClientBuilder().setConnectionManager(sharedConnectionManager);
 
-      log.debug(
-          "http proxy setup with host '{}'", remoteProxySettings.getHttpProxySettings().getHostname()
-      );
-      proxies.put("http", httpProxy);
-      proxies.put("https", httpProxy);
+    // configurable defaults
+    int poolTimeout = SystemPropertiesHelper.getInteger(CONNECTION_POOL_TIMEOUT_KEY, CONNECTION_POOL_TIMEOUT_DEFAULT);
+    builder.getRequestConfigBuilder().setConnectionRequestTimeout(poolTimeout);
 
-      if (remoteProxySettings.getHttpsProxySettings() != null
-          && remoteProxySettings.getHttpsProxySettings().isEnabled()) {
-        final HttpHost httpsProxy = new HttpHost(
-            remoteProxySettings.getHttpsProxySettings().getHostname(),
-            remoteProxySettings.getHttpsProxySettings().getPort()
-        );
-        applyAuthenticationConfig(
-            builder, remoteProxySettings.getHttpsProxySettings().getProxyAuthentication(), httpsProxy
-        );
-        log.debug(
-            "https proxy setup with host '{}'", remoteProxySettings.getHttpsProxySettings().getHostname()
-        );
-        proxies.put("https", httpsProxy);
-      }
+    long keepAliveDuration = SystemPropertiesHelper.getLong(KEEP_ALIVE_MAX_DURATION_KEY, KEEP_ALIVE_MAX_DURATION_DEFAULT);
+    builder.getHttpClientBuilder().setKeepAliveStrategy(new NexusConnectionKeepAliveStrategy(keepAliveDuration));
 
-      final Set<Pattern> nonProxyHostPatterns = Sets.newHashSet();
-      if (remoteProxySettings.getNonProxyHosts() != null && !remoteProxySettings.getNonProxyHosts().isEmpty()) {
-        for (String nonProxyHostRegex : remoteProxySettings.getNonProxyHosts()) {
-          try {
-            nonProxyHostPatterns.add(Pattern.compile(nonProxyHostRegex, Pattern.CASE_INSENSITIVE));
-          }
-          catch (PatternSyntaxException e) {
-            log.warn("Invalid non proxy host regex: {}", nonProxyHostRegex, e);
-          }
-        }
-      }
+    // defaults
+    builder.getConnectionConfigBuilder().setBufferSize(8 * 1024);
+    builder.getRequestConfigBuilder().setCookieSpec(CookieSpecs.IGNORE_COOKIES);
+    builder.getRequestConfigBuilder().setExpectContinueEnabled(false);
+    builder.getRequestConfigBuilder().setStaleConnectionCheckEnabled(false);
 
-      builder.getHttpClientBuilder().setRoutePlanner(
-          new NexusHttpRoutePlanner(
-              proxies, nonProxyHostPatterns, DefaultSchemePortResolver.INSTANCE
-          )
-      );
-    }
+    customizer.customize(builder);
+
+    return builder;
   }
 }
