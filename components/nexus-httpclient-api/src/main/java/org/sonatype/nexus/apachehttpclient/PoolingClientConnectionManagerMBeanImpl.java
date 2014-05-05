@@ -24,7 +24,7 @@ import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
  *
  * @since 2.2
  */
-class PoolingClientConnectionManagerMBeanImpl
+public class PoolingClientConnectionManagerMBeanImpl
     extends StandardMBean
     implements PoolingClientConnectionManagerMBean
 {

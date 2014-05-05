@@ -33,7 +33,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  *
  * @since 2.6
  */
-class NexusHttpRoutePlanner
+public class NexusHttpRoutePlanner
     extends DefaultRoutePlanner
 {
 
@@ -58,7 +58,7 @@ class NexusHttpRoutePlanner
   /**
    * @since 2.5
    */
-  NexusHttpRoutePlanner(final Map<String, HttpHost> proxies,
+  public NexusHttpRoutePlanner(final Map<String, HttpHost> proxies,
                         final Set<Pattern> nonProxyHostPatterns,
                         final SchemePortResolver schemePortResolver)
   {

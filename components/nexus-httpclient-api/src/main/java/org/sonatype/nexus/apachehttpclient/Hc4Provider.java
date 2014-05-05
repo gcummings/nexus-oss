@@ -12,8 +12,6 @@
  */
 package org.sonatype.nexus.apachehttpclient;
 
-import org.sonatype.nexus.proxy.storage.remote.RemoteStorageContext;
-
 import com.google.common.annotations.VisibleForTesting;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.Credentials;
@@ -23,7 +21,6 @@ import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.config.ConnectionConfig;
 import org.apache.http.config.SocketConfig;
-import org.apache.http.conn.HttpClientConnectionManager;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.protocol.HttpContext;
@@ -86,7 +83,7 @@ public interface Hc4Provider
 
     private boolean credentialsProviderAltered;
 
-    Builder() {
+    public Builder() {
       this(HttpClientBuilder.create(),
           ConnectionConfig.copy(ConnectionConfig.DEFAULT),
           SocketConfig.copy(SocketConfig.DEFAULT),
@@ -94,7 +91,7 @@ public interface Hc4Provider
       );
     }
 
-    Builder(final HttpClientBuilder httpClientBuilder,
+    public Builder(final HttpClientBuilder httpClientBuilder,
             final ConnectionConfig.Builder connectionConfigBuilder,
             final SocketConfig.Builder socketConfigBuilder,
             final RequestConfig.Builder requestConfigBuilder)

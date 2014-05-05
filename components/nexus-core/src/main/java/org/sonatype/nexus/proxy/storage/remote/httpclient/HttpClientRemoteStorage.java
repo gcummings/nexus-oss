@@ -26,7 +26,7 @@ import org.sonatype.nexus.ApplicationStatusSource;
 import org.sonatype.nexus.apachehttpclient.Hc4Provider;
 import org.sonatype.nexus.apachehttpclient.Page;
 import org.sonatype.nexus.apachehttpclient.Page.PageContext;
-import org.sonatype.nexus.apachehttpclient.RepositoryPageContext;
+import org.sonatype.nexus.internal.httpclient.RepositoryPageContext;
 import org.sonatype.nexus.mime.MimeSupport;
 import org.sonatype.nexus.proxy.ItemNotFoundException;
 import org.sonatype.nexus.proxy.RemoteAccessDeniedException;

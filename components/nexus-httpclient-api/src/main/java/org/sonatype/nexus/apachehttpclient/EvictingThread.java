@@ -27,7 +27,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * @author cstamas
  * @since 2.2
  */
-class EvictingThread
+public class EvictingThread
     extends Thread
 {
   private static final Logger LOGGER = LoggerFactory.getLogger(EvictingThread.class);
@@ -38,7 +38,7 @@ class EvictingThread
 
   private final long delay;
 
-  EvictingThread(final HttpClientConnectionManager httpClientConnectionManager, final long idleTimeMillis, final long delay) {
+  public EvictingThread(final HttpClientConnectionManager httpClientConnectionManager, final long idleTimeMillis, final long delay) {
     super("HC4x-EvictingThread");
     Preconditions.checkArgument(idleTimeMillis > -1, "Keep alive period in milliseconds cannot be negative");
     this.httpClientConnectionManager = checkNotNull(httpClientConnectionManager);
@@ -48,7 +48,7 @@ class EvictingThread
     setPriority(MIN_PRIORITY);
   }
 
-  EvictingThread(final HttpClientConnectionManager httpClientConnectionManager, final long idleTimeMillis) {
+  public EvictingThread(final HttpClientConnectionManager httpClientConnectionManager, final long idleTimeMillis) {
     this(httpClientConnectionManager, idleTimeMillis, 5000);
   }
 

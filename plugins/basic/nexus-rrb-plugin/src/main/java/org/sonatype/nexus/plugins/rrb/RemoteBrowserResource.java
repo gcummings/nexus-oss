@@ -24,7 +24,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 
 import org.sonatype.nexus.apachehttpclient.Hc4Provider;
-import org.sonatype.nexus.apachehttpclient.RemoteStorageContextCustomizer;
+import org.sonatype.nexus.internal.httpclient.RemoteStorageContextCustomizer;
 import org.sonatype.nexus.proxy.NoSuchRepositoryException;
 import org.sonatype.nexus.proxy.NoSuchResourceStoreException;
 import org.sonatype.nexus.proxy.ResourceStore;
@@ -125,7 +125,8 @@ public class RemoteBrowserResource
     }
 
     try {
-      ProxyRepository proxyRepository = getUnprotectedRepositoryRegistry().getRepositoryWithFacet(id, ProxyRepository.class);
+      ProxyRepository proxyRepository = getUnprotectedRepositoryRegistry().getRepositoryWithFacet(id,
+          ProxyRepository.class);
       HttpClient client = httpClientProvider.createHttpClient(
           new RemoteStorageContextCustomizer(proxyRepository.getRemoteStorageContext()));
 

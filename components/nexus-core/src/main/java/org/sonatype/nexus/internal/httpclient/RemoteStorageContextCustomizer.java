@@ -1,4 +1,4 @@
-package org.sonatype.nexus.apachehttpclient;
+package org.sonatype.nexus.internal.httpclient;
 
 import java.util.List;
 import java.util.Map;
@@ -8,6 +8,7 @@ import java.util.regex.PatternSyntaxException;
 
 import org.sonatype.nexus.apachehttpclient.Hc4Provider.Builder;
 import org.sonatype.nexus.apachehttpclient.Hc4Provider.Customizer;
+import org.sonatype.nexus.apachehttpclient.NexusHttpRoutePlanner;
 import org.sonatype.nexus.proxy.repository.ClientSSLRemoteAuthenticationSettings;
 import org.sonatype.nexus.proxy.repository.NtlmRemoteAuthenticationSettings;
 import org.sonatype.nexus.proxy.repository.RemoteAuthenticationSettings;
@@ -32,7 +33,7 @@ import org.apache.http.impl.conn.DefaultSchemePortResolver;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
- * ???
+ * RemoteStorageContext {@link Customizer}.
  *
  * @since 3.0
  */
