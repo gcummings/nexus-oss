@@ -123,12 +123,10 @@ public class Hc4ProviderImpl
 
   private final Provider<RemoteStorageContext> globalRemoteStorageContextProvider;
 
-  // FIXME: Resolve how we apply UA builders
-
-  ///**
-  // * UA builder component.
-  // */
-  //private final UserAgentBuilder userAgentBuilder;
+  /**
+   * UA builder component.
+   */
+  private final UserAgentBuilder userAgentBuilder;
 
   /**
    * The low level core event bus.
