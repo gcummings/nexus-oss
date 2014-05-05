@@ -102,5 +102,6 @@ public interface ApplicationConfiguration
    * @deprecated you should use setters/getters directly on Configurable instances, and not tampering with
    *             Configuration model directly!
    */
+  @Deprecated
   Configuration getConfigurationModel();
 }
