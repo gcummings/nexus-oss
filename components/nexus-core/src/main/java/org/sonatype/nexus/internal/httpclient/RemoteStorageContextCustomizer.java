@@ -10,6 +10,7 @@
  * of Sonatype, Inc. Apache Maven is a trademark of the Apache Software Foundation. M2eclipse is a trademark of the
  * Eclipse Foundation. All other trademarks are the property of their respective owners.
  */
+
 package org.sonatype.nexus.internal.httpclient;
 
 import java.util.List;
@@ -49,8 +50,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * @since 3.0
  */
 public class RemoteStorageContextCustomizer
-  extends ComponentSupport
-  implements Customizer
+    extends ComponentSupport
+    implements Customizer
 {
   private final RemoteStorageContext context;
 
@@ -70,7 +71,8 @@ public class RemoteStorageContextCustomizer
     builder.getRequestConfigBuilder().setSocketTimeout(timeout);
 
     // obey the given retries count and apply it to client.
-    int retries = context.getRemoteConnectionSettings() != null ? context.getRemoteConnectionSettings().getRetrievalRetryCount() : 0;
+    int retries = context.getRemoteConnectionSettings() != null ? context.getRemoteConnectionSettings()
+        .getRetrievalRetryCount() : 0;
     builder.getHttpClientBuilder().setRetryHandler(new StandardHttpRequestRetryHandler(retries, false));
 
     applyAuthenticationConfig(builder, context.getRemoteAuthenticationSettings(), null);
@@ -80,10 +82,9 @@ public class RemoteStorageContextCustomizer
     //builder.getHttpClientBuilder().setUserAgent(userAgentBuilder.formatUserAgentString(context));
   }
 
-  @VisibleForTesting
-  void applyAuthenticationConfig(final Builder builder,
-                                 final RemoteAuthenticationSettings ras,
-                                 final HttpHost proxyHost)
+  private void applyAuthenticationConfig(final Builder builder,
+                                         final RemoteAuthenticationSettings ras,
+                                         final HttpHost proxyHost)
   {
     if (ras != null) {
       String authScope = "target";
@@ -128,11 +129,7 @@ public class RemoteStorageContextCustomizer
     }
   }
 
-  /**
-   * @since 2.6
-   */
-  @VisibleForTesting
-  void applyProxyConfig(final Builder builder, final RemoteProxySettings remoteProxySettings) {
+  private void applyProxyConfig(final Builder builder, final RemoteProxySettings remoteProxySettings) {
     if (remoteProxySettings != null
         && remoteProxySettings.getHttpProxySettings() != null
         && remoteProxySettings.getHttpProxySettings().isEnabled()) {
