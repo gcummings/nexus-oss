@@ -58,7 +58,7 @@ public class NexusHttpRoutePlanner
   /**
    * @since 2.5
    */
-  public NexusHttpRoutePlanner(final Map<String, HttpHost> proxies,
+  NexusHttpRoutePlanner(final Map<String, HttpHost> proxies,
                         final Set<Pattern> nonProxyHostPatterns,
                         final SchemePortResolver schemePortResolver)
   {

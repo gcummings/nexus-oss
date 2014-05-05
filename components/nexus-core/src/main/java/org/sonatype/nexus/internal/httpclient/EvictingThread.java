@@ -24,7 +24,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Low priority daemon thread responsible to evict connection manager pooled connections/
  *
- * @author cstamas
  * @since 2.2
  */
 public class EvictingThread
@@ -38,7 +37,7 @@ public class EvictingThread
 
   private final long delay;
 
-  public EvictingThread(final HttpClientConnectionManager httpClientConnectionManager, final long idleTimeMillis, final long delay) {
+  EvictingThread(final HttpClientConnectionManager httpClientConnectionManager, final long idleTimeMillis, final long delay) {
     super("HC4x-EvictingThread");
     Preconditions.checkArgument(idleTimeMillis > -1, "Keep alive period in milliseconds cannot be negative");
     this.httpClientConnectionManager = checkNotNull(httpClientConnectionManager);
@@ -48,7 +47,7 @@ public class EvictingThread
     setPriority(MIN_PRIORITY);
   }
 
-  public EvictingThread(final HttpClientConnectionManager httpClientConnectionManager, final long idleTimeMillis) {
+  EvictingThread(final HttpClientConnectionManager httpClientConnectionManager, final long idleTimeMillis) {
     this(httpClientConnectionManager, idleTimeMillis, 5000);
   }
 

@@ -21,13 +21,11 @@ import org.apache.http.protocol.HttpContext;
  * Nexus connection keep alive strategy, that differs from the HC4 default one only in one thing: when server does
  * not state timeout, it never says "indefinite" (meaning pool it forever), but instead a finite amount of time.
  *
- * @author cstamas
  * @since 2.3
  */
 public class NexusConnectionKeepAliveStrategy
     extends DefaultConnectionKeepAliveStrategy
 {
-
   /**
    * The max duration for how long to pool a connection in milliseconds. Used as default too, instead of
    * "indefinite" case.
@@ -37,7 +35,7 @@ public class NexusConnectionKeepAliveStrategy
   /**
    * @param maxKeepAliveDuration the max duration in millis for how long to pool the connection.
    */
-  public NexusConnectionKeepAliveStrategy(final long maxKeepAliveDuration) {
+  NexusConnectionKeepAliveStrategy(final long maxKeepAliveDuration) {
     Preconditions.checkArgument(maxKeepAliveDuration > -1,
         "maxKeepAliveDuration must be 0 or higher, but is set to %s",
         maxKeepAliveDuration);

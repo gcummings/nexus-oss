@@ -44,7 +44,7 @@ public class PoolingClientConnectionManagerMBeanInstaller
   /**
    * Registers the connection manager to JMX.
    */
-  public synchronized void register(final PoolingHttpClientConnectionManager connectionManager) {
+  synchronized void register(final PoolingHttpClientConnectionManager connectionManager) {
     if (jmxName == null) {
       try {
         jmxName =
@@ -67,7 +67,7 @@ public class PoolingClientConnectionManagerMBeanInstaller
   /**
    * Unregisters the connection manager from JMX.
    */
-  public synchronized void unregister() {
+  synchronized void unregister() {
     if (jmxName != null) {
       try {
         final MBeanServer server = ManagementFactory.getPlatformMBeanServer();

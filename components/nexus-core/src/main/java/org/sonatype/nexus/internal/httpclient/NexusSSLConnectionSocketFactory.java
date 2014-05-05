@@ -45,7 +45,7 @@ public class NexusSSLConnectionSocketFactory
 
   private final X509HostnameVerifier hostnameVerifier;
 
-  public NexusSSLConnectionSocketFactory(
+  NexusSSLConnectionSocketFactory(
       final SSLSocketFactory defaultSocketFactory,
       final X509HostnameVerifier hostnameVerifier,
       final List<SSLContextSelector> selectors)
