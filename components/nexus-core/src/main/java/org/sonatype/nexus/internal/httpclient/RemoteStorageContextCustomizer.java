@@ -20,7 +20,6 @@ import java.util.regex.PatternSyntaxException;
 
 import org.sonatype.nexus.apachehttpclient.Hc4Provider.Builder;
 import org.sonatype.nexus.apachehttpclient.Hc4Provider.Customizer;
-import org.sonatype.nexus.apachehttpclient.NexusHttpRoutePlanner;
 import org.sonatype.nexus.proxy.repository.ClientSSLRemoteAuthenticationSettings;
 import org.sonatype.nexus.proxy.repository.NtlmRemoteAuthenticationSettings;
 import org.sonatype.nexus.proxy.repository.RemoteAuthenticationSettings;

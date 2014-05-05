@@ -21,11 +21,7 @@ import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
-import org.sonatype.nexus.apachehttpclient.EvictingThread;
 import org.sonatype.nexus.apachehttpclient.Hc4Provider;
-import org.sonatype.nexus.apachehttpclient.NexusConnectionKeepAliveStrategy;
-import org.sonatype.nexus.apachehttpclient.NexusSSLConnectionSocketFactory;
-import org.sonatype.nexus.apachehttpclient.PoolingClientConnectionManagerMBeanInstaller;
 import org.sonatype.nexus.apachehttpclient.SSLContextSelector;
 import org.sonatype.nexus.proxy.events.NexusStoppedEvent;
 import org.sonatype.nexus.proxy.repository.NtlmRemoteAuthenticationSettings;

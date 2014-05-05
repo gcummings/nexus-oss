@@ -14,7 +14,7 @@ package org.sonatype.nexus.proxy.storage.remote.httpclient;
 
 import org.sonatype.nexus.ApplicationStatusSource;
 import org.sonatype.nexus.internal.httpclient.Hc4ProviderImpl;
-import org.sonatype.nexus.apachehttpclient.PoolingClientConnectionManagerMBeanInstaller;
+import org.sonatype.nexus.internal.httpclient.PoolingClientConnectionManagerMBeanInstaller;
 import org.sonatype.nexus.mime.MimeSupport;
 import org.sonatype.nexus.proxy.RemoteStorageException;
 import org.sonatype.nexus.proxy.RemoteStorageTransportOverloadedException;

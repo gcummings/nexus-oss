@@ -12,9 +12,6 @@
  */
 package org.sonatype.nexus.internal.httpclient;
 
-import org.sonatype.nexus.apachehttpclient.PoolingClientConnectionManagerMBeanInstaller;
-import org.sonatype.nexus.internal.httpclient.Hc4ProviderImpl;
-import org.sonatype.nexus.internal.httpclient.RemoteStorageContextCustomizer;
 import org.sonatype.nexus.proxy.repository.DefaultRemoteConnectionSettings;
 import org.sonatype.nexus.proxy.repository.DefaultRemoteHttpProxySettings;
 import org.sonatype.nexus.proxy.repository.NtlmRemoteAuthenticationSettings;
