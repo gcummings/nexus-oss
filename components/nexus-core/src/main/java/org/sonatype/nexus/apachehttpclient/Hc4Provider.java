@@ -128,12 +128,17 @@ public interface Hc4Provider
     private boolean credentialsProviderAltered;
 
     Builder() {
-      this(HttpClientBuilder.create(), ConnectionConfig.copy(ConnectionConfig.DEFAULT),
-          SocketConfig.copy(SocketConfig.DEFAULT), RequestConfig.copy(RequestConfig.DEFAULT));
+      this(HttpClientBuilder.create(),
+          ConnectionConfig.copy(ConnectionConfig.DEFAULT),
+          SocketConfig.copy(SocketConfig.DEFAULT),
+          RequestConfig.copy(RequestConfig.DEFAULT)
+      );
     }
 
-    Builder(final HttpClientBuilder httpClientBuilder, final ConnectionConfig.Builder connectionConfigBuilder,
-            final SocketConfig.Builder socketConfigBuilder, final RequestConfig.Builder requestConfigBuilder)
+    Builder(final HttpClientBuilder httpClientBuilder,
+            final ConnectionConfig.Builder connectionConfigBuilder,
+            final SocketConfig.Builder socketConfigBuilder,
+            final RequestConfig.Builder requestConfigBuilder)
     {
       this.httpClientBuilder = checkNotNull(httpClientBuilder);
       this.connectionConfigBuilder = checkNotNull(connectionConfigBuilder);
