@@ -15,7 +15,6 @@ package org.sonatype.nexus.proxy.storage.remote.httpclient;
 import org.sonatype.nexus.apachehttpclient.Hc4Provider;
 import org.sonatype.nexus.apachehttpclient.Hc4ProviderImpl;
 import org.sonatype.nexus.apachehttpclient.PoolingClientConnectionManagerMBeanInstaller;
-import org.sonatype.nexus.configuration.application.ApplicationConfiguration;
 import org.sonatype.nexus.proxy.repository.DefaultRemoteConnectionSettings;
 import org.sonatype.nexus.proxy.repository.ProxyRepository;
 import org.sonatype.nexus.proxy.repository.RemoteProxySettings;
@@ -24,6 +23,7 @@ import org.sonatype.nexus.proxy.utils.UserAgentBuilder;
 import org.sonatype.sisu.goodies.eventbus.EventBus;
 import org.sonatype.sisu.litmus.testsupport.TestSupport;
 
+import com.google.inject.util.Providers;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.ProtocolException;
@@ -55,9 +55,6 @@ public class HttpClientManagerTest
   private ProxyRepository proxyRepository;
 
   // ==
-
-  @Mock
-  private ApplicationConfiguration applicationConfiguration;
 
   @Mock
   private UserAgentBuilder userAgentBuilder;
@@ -92,9 +89,8 @@ public class HttpClientManagerTest
     rcs.setConnectionTimeout(10000);
     when(globalRemoteStorageContext.getRemoteConnectionSettings()).thenReturn(rcs);
     when(globalRemoteStorageContext.getRemoteProxySettings()).thenReturn(remoteProxySettings);
-    when(applicationConfiguration.getGlobalRemoteStorageContext()).thenReturn(globalRemoteStorageContext);
 
-    hc4Provider = new Hc4ProviderImpl(applicationConfiguration, userAgentBuilder, eventBus, jmxInstaller, null);
+    hc4Provider = new Hc4ProviderImpl(Providers.of(globalRemoteStorageContext), userAgentBuilder, eventBus, jmxInstaller, null);
 
     when(proxyRepository.getId()).thenReturn("central");
     when(response.getStatusLine()).thenReturn(statusLine);

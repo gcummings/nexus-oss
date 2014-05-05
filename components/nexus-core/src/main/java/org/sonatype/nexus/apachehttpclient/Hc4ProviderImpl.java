@@ -22,10 +22,9 @@ import java.util.regex.PatternSyntaxException;
 
 import javax.inject.Inject;
 import javax.inject.Named;
+import javax.inject.Provider;
 import javax.inject.Singleton;
 
-import org.sonatype.nexus.configuration.application.ApplicationConfiguration;
-import org.sonatype.nexus.configuration.application.GlobalRemoteConnectionSettings;
 import org.sonatype.nexus.proxy.events.NexusStoppedEvent;
 import org.sonatype.nexus.proxy.repository.ClientSSLRemoteAuthenticationSettings;
 import org.sonatype.nexus.proxy.repository.NtlmRemoteAuthenticationSettings;
@@ -138,10 +137,7 @@ public class Hc4ProviderImpl
 
   // ==
 
-  /**
-   * Application configuration holding the {@link GlobalRemoteConnectionSettings}.
-   */
-  private final ApplicationConfiguration applicationConfiguration;
+  private final Provider<RemoteStorageContext> globalRemoteStorageContextProvider;
 
   /**
    * UA builder component.
@@ -168,21 +164,14 @@ public class Hc4ProviderImpl
    */
   private final PoolingClientConnectionManagerMBeanInstaller jmxInstaller;
 
-  /**
-   * @param applicationConfiguration the Nexus {@link ApplicationConfiguration}, must not be {@code null}.
-   * @param userAgentBuilder         UA builder component, must not be {@code null}.
-   * @param eventBus                 the event bus, must not be {@code null}.
-   * @param jmxInstaller             installer to expose pool information over JMX, must not be {@code null}.
-   * @param selectors                list of {@link SSLContextSelector}, might be {@code null}.
-   */
   @Inject
-  public Hc4ProviderImpl(final ApplicationConfiguration applicationConfiguration,
+  public Hc4ProviderImpl(final @Named("global") Provider<RemoteStorageContext> globalRemoteStorageContextProvider,
                          final UserAgentBuilder userAgentBuilder,
                          final EventBus eventBus,
                          final PoolingClientConnectionManagerMBeanInstaller jmxInstaller,
                          final List<SSLContextSelector> selectors)
   {
-    this.applicationConfiguration = checkNotNull(applicationConfiguration);
+    this.globalRemoteStorageContextProvider = checkNotNull(globalRemoteStorageContextProvider);
     this.userAgentBuilder = checkNotNull(userAgentBuilder);
     this.jmxInstaller = checkNotNull(jmxInstaller);
     this.sharedConnectionManager = createClientConnectionManager(selectors);
@@ -281,12 +270,12 @@ public class Hc4ProviderImpl
     // with huge pauses in between. Still, connection reuse is needed in some rare cases,
     // like when you have NTLM proxy in between Nexus and the Internet. So, let ask HC4 provider,
     // does it "think" we still need connection reuse or not.
-    return createHttpClient(reuseConnectionsNeeded(applicationConfiguration.getGlobalRemoteStorageContext()));
+    return createHttpClient(reuseConnectionsNeeded(globalRemoteStorageContextProvider.get()));
   }
 
   @Override
   public HttpClient createHttpClient(final boolean reuseConnections) {
-    final Builder builder = prepareHttpClient(applicationConfiguration.getGlobalRemoteStorageContext());
+    final Builder builder = prepareHttpClient(globalRemoteStorageContextProvider.get());
     if (!reuseConnections) {
       builder.getHttpClientBuilder().setConnectionReuseStrategy(new NoConnectionReuseStrategy());
     }
