@@ -54,7 +54,6 @@ import org.apache.http.client.config.CookieSpecs;
 import org.apache.http.client.protocol.ResponseContentEncoding;
 import org.apache.http.config.Registry;
 import org.apache.http.config.RegistryBuilder;
-import org.apache.http.conn.HttpClientConnectionManager;
 import org.apache.http.conn.socket.ConnectionSocketFactory;
 import org.apache.http.conn.socket.PlainConnectionSocketFactory;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
@@ -270,15 +269,19 @@ public class Hc4ProviderImpl
     // with huge pauses in between. Still, connection reuse is needed in some rare cases,
     // like when you have NTLM proxy in between Nexus and the Internet. So, let ask HC4 provider,
     // does it "think" we still need connection reuse or not.
-    return createHttpClient(reuseConnectionsNeeded(globalRemoteStorageContextProvider.get()));
+    boolean reuseConnections = reuseConnectionsNeeded(globalRemoteStorageContextProvider.get());
+    return createHttpClient(reuseConnections);
   }
 
   @Override
   public HttpClient createHttpClient(final boolean reuseConnections) {
     final Builder builder = prepareHttpClient(globalRemoteStorageContextProvider.get());
+
+    // Maybe disable connection reuse
     if (!reuseConnections) {
       builder.getHttpClientBuilder().setConnectionReuseStrategy(new NoConnectionReuseStrategy());
     }
+
     return builder.build();
   }
 
@@ -289,12 +292,10 @@ public class Hc4ProviderImpl
 
   @Override
   public Builder prepareHttpClient(final RemoteStorageContext context) {
-    return prepareHttpClient(context, sharedConnectionManager);
-  }
+    final Builder builder = new Builder();
+    builder.getHttpClientBuilder().setConnectionManager(sharedConnectionManager);
+    builder.getHttpClientBuilder().addInterceptorFirst(new ResponseContentEncoding());
 
-  // ==
-
-  protected void applyConfig(final Builder builder, final RemoteStorageContext context) {
     builder.getSocketConfigBuilder().setSoTimeout(getSoTimeout(context));
 
     builder.getConnectionConfigBuilder().setBufferSize(8 * 1024);
@@ -308,7 +309,22 @@ public class Hc4ProviderImpl
     builder.getHttpClientBuilder().setUserAgent(userAgentBuilder.formatUserAgentString(context));
 
     builder.getRequestConfigBuilder().setConnectionRequestTimeout(Ints.checkedCast(getConnectionPoolTimeout()));
+
+
+    applyAuthenticationConfig(builder, context.getRemoteAuthenticationSettings(), null);
+    applyProxyConfig(builder, context.getRemoteProxySettings());
+    // obey the given retries count and apply it to client.
+    final int retries =
+        context.getRemoteConnectionSettings() != null
+            ? context.getRemoteConnectionSettings().getRetrievalRetryCount()
+            : 0;
+    builder.getHttpClientBuilder().setRetryHandler(new StandardHttpRequestRetryHandler(retries, false));
+    builder.getHttpClientBuilder()
+        .setKeepAliveStrategy(new NexusConnectionKeepAliveStrategy(getKeepAliveMaxDuration()));
+    return builder;
   }
+
+  // ==
 
   protected ManagedClientConnectionManager createClientConnectionManager(final List<SSLContextSelector> selectors)
       throws IllegalStateException
@@ -350,28 +366,6 @@ public class Hc4ProviderImpl
   // TODO: Extracted From Hc4ProviderBase, cleanup and organize
   //
 
-  // ==
-
-  private Builder prepareHttpClient(final RemoteStorageContext context,
-                                    final HttpClientConnectionManager httpClientConnectionManager)
-  {
-    final Builder builder = new Builder();
-    builder.getHttpClientBuilder().setConnectionManager(httpClientConnectionManager);
-    builder.getHttpClientBuilder().addInterceptorFirst(new ResponseContentEncoding());
-    applyConfig(builder, context);
-    applyAuthenticationConfig(builder, context.getRemoteAuthenticationSettings(), null);
-    applyProxyConfig(builder, context.getRemoteProxySettings());
-    // obey the given retries count and apply it to client.
-    final int retries =
-        context.getRemoteConnectionSettings() != null
-            ? context.getRemoteConnectionSettings().getRetrievalRetryCount()
-            : 0;
-    builder.getHttpClientBuilder().setRetryHandler(new StandardHttpRequestRetryHandler(retries, false));
-    builder.getHttpClientBuilder()
-        .setKeepAliveStrategy(new NexusConnectionKeepAliveStrategy(getKeepAliveMaxDuration()));
-    return builder;
-  }
-
   /**
    * Returns the maximum Keep-Alive duration in milliseconds.
    */
@@ -408,6 +402,7 @@ public class Hc4ProviderImpl
    *
    * @param context the remote storage context to test for need of reused connections.
    * @return {@code true} if connection reuse is required according to remote storage context.
+   *
    * @since 2.7.2
    */
   @VisibleForTesting

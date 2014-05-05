@@ -102,7 +102,10 @@ public interface Hc4Provider
    */
   HttpClient createHttpClient(RemoteStorageContext context);
 
-  // ==
+  /**
+   * Prepares but does not build a Builder, allowing extra configuration to be applied to it by caller.
+   */
+  Builder prepareHttpClient(RemoteStorageContext context);
 
   /**
    * Builder carries not-yet built HttpClient parts and configuration, enabling to have it passed around to apply
@@ -207,9 +210,4 @@ public interface Hc4Provider
       return httpClientBuilder.build();
     }
   }
-
-  /**
-   * Prepares but does not build a Builder, allowing extra configuration to be applied to it by caller.
-   */
-  Builder prepareHttpClient(RemoteStorageContext context);
 }
