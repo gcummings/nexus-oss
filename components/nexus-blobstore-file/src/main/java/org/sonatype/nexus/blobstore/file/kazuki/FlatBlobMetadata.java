@@ -14,6 +14,8 @@ package org.sonatype.nexus.blobstore.file.kazuki;
 
 import java.util.Map;
 
+import org.sonatype.nexus.blobstore.file.State;
+
 import org.joda.time.DateTime;
 
 /**
@@ -27,7 +29,7 @@ class FlatBlobMetadata
 {
   private String blobId;
 
-  private boolean blobMarkedForDeletion;
+  private State state;
 
   private Map<String, String> headers;
 
@@ -45,12 +47,12 @@ class FlatBlobMetadata
     this.blobId = blobId;
   }
 
-  public boolean isBlobMarkedForDeletion() {
-    return blobMarkedForDeletion;
+  public State getState() {
+    return state;
   }
 
-  public void setBlobMarkedForDeletion(final boolean blobMarkedForDeletion) {
-    this.blobMarkedForDeletion = blobMarkedForDeletion;
+  public void setState(final State state) {
+    this.state = state;
   }
 
   public Map<String, String> getHeaders() {
@@ -89,7 +91,7 @@ class FlatBlobMetadata
   public String toString() {
     return "FlatBlobMetadata{" +
         "blobId='" + blobId + '\'' +
-        ", blobMarkedForDeletion=" + blobMarkedForDeletion +
+        ", state=" + state +
         ", headers=" + headers +
         ", creationTime=" + creationTime +
         ", sha1Hash='" + sha1Hash + '\'' +

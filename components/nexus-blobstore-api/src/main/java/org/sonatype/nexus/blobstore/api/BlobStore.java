@@ -93,4 +93,10 @@ public interface BlobStore
    */
   @Nullable
   BlobStoreListener getBlobStoreListener();
+
+  /**
+   * Perform garbage collection, purging blobs marked for deletion or whatever other periodic, implementation-specific
+   * tasks need doing.
+   */
+  public void compact();
 }

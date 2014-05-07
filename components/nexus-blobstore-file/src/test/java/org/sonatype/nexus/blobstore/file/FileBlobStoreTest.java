@@ -98,7 +98,7 @@ public class FileBlobStoreTest
     final BlobId fakeId = new BlobId("fakeId");
     final BlobMetadata metadata = mock(BlobMetadata.class);
     when(metadataStore.get(fakeId)).thenReturn(metadata);
-    when(metadata.isBlobMarkedForDeletion()).thenReturn(false);
+    when(metadata.isAlive()).thenReturn(true);
     when(metadata.getMetrics()).thenReturn(mock(BlobMetrics.class));
 
     final Path fakePath = mock(Path.class);
@@ -118,12 +118,12 @@ public class FileBlobStoreTest
     when(metadataStore.get(fakeId)).thenReturn(metadata);
 
     // The blob isn't already deleted
-    when(metadata.isBlobMarkedForDeletion()).thenReturn(false);
+    when(metadata.isAlive()).thenReturn(true);
 
     final boolean deleted = fileBlobStore.delete(fakeId);
     assertThat(deleted, is(equalTo(true)));
 
-    verify(metadata).setBlobMarkedForDeletion(true);
+    verify(metadata).setState(State.MARKED_FOR_DELETION);
   }
 
   @Test
@@ -132,7 +132,7 @@ public class FileBlobStoreTest
     final BlobId fakeId = new BlobId("testId");
     final BlobMetadata metadata = mock(BlobMetadata.class);
     when(metadataStore.get(fakeId)).thenReturn(metadata);
-    when(metadata.isBlobMarkedForDeletion()).thenReturn(true);
+    when(metadata.isAlive()).thenReturn(false);
 
     final boolean deleted = fileBlobStore.delete(fakeId);
     assertThat(deleted, is(equalTo(false)));

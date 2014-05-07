@@ -28,30 +28,33 @@ public class BlobMetadata
 {
   private BlobId blobId;
 
-  private boolean blobMarkedForDeletion;
+
+  private State state;
 
   private Map<String, String> headers;
 
   private BlobMetrics metrics;
 
-  public BlobMetadata(final BlobId blobId, final Map<String, String> headers) {
-    checkNotNull(blobId);
-    checkNotNull(headers);
-
-    this.blobId = blobId;
-    this.headers = headers;
+  public BlobMetadata(final BlobId blobId, State state, final Map<String, String> headers) {
+    this.blobId = checkNotNull(blobId, "blob ID");
+    this.state = checkNotNull(state);
+    this.headers = checkNotNull(headers);
   }
 
   public BlobId getBlobId() {
     return blobId;
   }
 
-  public boolean isBlobMarkedForDeletion() {
-    return blobMarkedForDeletion;
+  public State getState() {
+    return state;
   }
 
-  public void setBlobMarkedForDeletion(final boolean blobMarkedForDeletion) {
-    this.blobMarkedForDeletion = blobMarkedForDeletion;
+  public void setState(final State state) {
+    this.state = state;
+  }
+
+  public boolean isAlive() {
+    return State.ALIVE.equals(state);
   }
 
   public Map<String, String> getHeaders() {
@@ -70,7 +73,7 @@ public class BlobMetadata
   public String toString() {
     return "BlobMetadata{" +
         "blobId=" + blobId +
-        ", blobMarkedForDeletion=" + blobMarkedForDeletion +
+        ", state=" + state +
         ", headers=" + headers +
         ", metrics=" + metrics +
         '}';
