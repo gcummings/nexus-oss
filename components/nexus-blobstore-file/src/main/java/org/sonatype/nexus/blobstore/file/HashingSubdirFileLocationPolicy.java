@@ -41,6 +41,11 @@ public class HashingSubdirFileLocationPolicy
   }
 
   @Override
+  public Path getRoot() {
+    return dataDirectory;
+  }
+
+  @Override
   public Path forContent(final BlobId blobId) {
     return dataDirectory.resolve(computeSubdirectory(blobId) + "/" + escape(blobId) + ".blob");
   }

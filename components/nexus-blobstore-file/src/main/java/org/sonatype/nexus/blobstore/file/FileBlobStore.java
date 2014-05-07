@@ -14,6 +14,8 @@ package org.sonatype.nexus.blobstore.file;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.FileStore;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.NoSuchAlgorithmException;
 import java.util.Map;
@@ -205,7 +207,32 @@ public class FileBlobStore
 
   @Override
   public BlobStoreMetrics getMetrics() {
-    return metadataStore.getBlobStoreMetrics();
+
+    final MetadataMetrics metadataMetrics = metadataStore.getMetadataMetrics();
+
+    return new BlobStoreMetrics()
+    {
+      @Override
+      public long getBlobCount() {
+        return metadataMetrics.getBlobCount();
+      }
+
+      @Override
+      public long getTotalSize() {
+        return metadataMetrics.getTotalSize();
+      }
+
+      @Override
+      public long getAvailableSpace() {
+        try {
+          final FileStore fileStore = Files.getFileStore(paths.getRoot());
+          return fileStore.getUsableSpace();
+        }
+        catch (IOException e) {
+          throw new BlobStoreException(e, getName(), null);
+        }
+      }
+    };
   }
 
   @Override

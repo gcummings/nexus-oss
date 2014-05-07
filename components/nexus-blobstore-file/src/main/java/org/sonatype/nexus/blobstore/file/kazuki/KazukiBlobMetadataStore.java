@@ -22,9 +22,9 @@ import javax.inject.Named;
 import org.sonatype.nexus.blobstore.api.BlobId;
 import org.sonatype.nexus.blobstore.api.BlobMetrics;
 import org.sonatype.nexus.blobstore.api.BlobStoreException;
-import org.sonatype.nexus.blobstore.api.BlobStoreMetrics;
 import org.sonatype.nexus.blobstore.file.BlobMetadata;
 import org.sonatype.nexus.blobstore.file.BlobMetadataStore;
+import org.sonatype.nexus.blobstore.file.MetadataMetrics;
 import org.sonatype.sisu.goodies.lifecycle.LifecycleSupport;
 
 import com.google.common.collect.ImmutableMap;
@@ -34,6 +34,7 @@ import io.kazuki.v0.store.index.SecondaryIndexStore;
 import io.kazuki.v0.store.index.UniqueEntityDescription;
 import io.kazuki.v0.store.index.query.ValueHolder;
 import io.kazuki.v0.store.index.query.ValueType;
+import io.kazuki.v0.store.keyvalue.KeyValueIterable;
 import io.kazuki.v0.store.keyvalue.KeyValueStore;
 import io.kazuki.v0.store.keyvalue.KeyValueStoreIteration.SortDirection;
 import io.kazuki.v0.store.lifecycle.Lifecycle;
@@ -58,6 +59,8 @@ public class KazukiBlobMetadataStore
 {
   public static final String BLOB_ID_INDEX = "uniqueBlobIdIndex";
 
+  public static final String METADATA_TYPE = "fileblobstore.metadata";
+
   private Lifecycle lifecycle;
 
   private KeyValueStore kvStore;
@@ -67,8 +70,6 @@ public class KazukiBlobMetadataStore
   private Schema metadataSchema;
 
   private SecondaryIndexStore secondaryIndexStore;
-
-  public static final String METADATA_SCHEMA_NAME = "fileblobstore.metadata";
 
   // TODO: These injections imply that there is only one metadata store
   @Inject
@@ -88,7 +89,7 @@ public class KazukiBlobMetadataStore
     lifecycle.init();
     lifecycle.start();
 
-    if (schemaStore.retrieveSchema(METADATA_SCHEMA_NAME) == null) {
+    if (schemaStore.retrieveSchema(METADATA_TYPE) == null) {
       Schema schema = new Schema.Builder()
           .addAttribute("blobId", Type.UTF8_SMALLSTRING, false)
           .addAttribute("blobMarkedForDeletion", Type.BOOLEAN, false)
@@ -102,7 +103,7 @@ public class KazukiBlobMetadataStore
 
       log.info("Creating schema for file blob metadata");
 
-      schemaStore.createSchema(METADATA_SCHEMA_NAME, schema);
+      schemaStore.createSchema(METADATA_TYPE, schema);
       this.metadataSchema = schema;
     }
   }
@@ -119,7 +120,7 @@ public class KazukiBlobMetadataStore
     System.err.println(flat);
     try {
       final Key key = kvStore
-          .create(METADATA_SCHEMA_NAME, FlatBlobMetadata.class, flat, TypeValidation.STRICT);
+          .create(METADATA_TYPE, FlatBlobMetadata.class, flat, TypeValidation.STRICT);
       log.debug("Adding metadata for blob {} with KZ key {}", metadata.getBlobId(), key);
     }
     catch (KazukiException e) {
@@ -144,7 +145,6 @@ public class KazukiBlobMetadataStore
 
   @Override
   public void update(final BlobMetadata metadata) {
-
     Key key = findKey(metadata.getBlobId());
     try {
       final FlatBlobMetadata flat = flatten(metadata);
@@ -167,13 +167,30 @@ public class KazukiBlobMetadataStore
   }
 
   @Override
-  public BlobStoreMetrics getBlobStoreMetrics() {
-    return null;
+  public MetadataMetrics getMetadataMetrics() {
+
+    // TODO: Replace this brute force approach with a counter
+    // TODO: Replace the statistics object with kazuki's eventual support for counters
+
+    final KeyValueIterable<FlatBlobMetadata> values = kvStore.iterators()
+        .values(METADATA_TYPE, FlatBlobMetadata.class, SortDirection.ASCENDING);
+    long totalSize = 0;
+    long blobCount = 0;
+    for (FlatBlobMetadata metadata : values) {
+      if (metadata == null) {
+        // Concurrent modification can cause objects in an iterator to return null.
+        continue;
+      }
+      blobCount++;
+      totalSize += metadata.getContentSize();
+    }
+
+    return new MetadataMetrics(blobCount, totalSize);
   }
 
   private Key findKey(final BlobId blobId) {
     final UniqueEntityDescription<FlatBlobMetadata> blobQuery = new UniqueEntityDescription<>(
-        METADATA_SCHEMA_NAME, FlatBlobMetadata.class, BLOB_ID_INDEX, metadataSchema,
+        METADATA_TYPE, FlatBlobMetadata.class, BLOB_ID_INDEX, metadataSchema,
         ImmutableMap.of("blobId", new ValueHolder(ValueType.STRING, blobId.getId())));
 
     final Map<UniqueEntityDescription, Key> keyMap = secondaryIndexStore
@@ -201,6 +218,8 @@ public class KazukiBlobMetadataStore
     if (metrics != null) {
       flat.setSha1Hash(metrics.getSHA1Hash());
       flat.setContentSize(metrics.getContentSize());
+
+      // TODO: Uncomment this once the kazuki bug for date handling is fixed
       //flat.setCreationTime(metrics.getCreationTime());
     }
     flat.setHeaders(metadata.getHeaders());
