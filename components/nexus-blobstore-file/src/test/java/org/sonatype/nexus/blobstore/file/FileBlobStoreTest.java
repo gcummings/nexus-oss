@@ -1,4 +1,15 @@
-
+/*
+ * Sonatype Nexus (TM) Open Source Version
+ * Copyright (c) 2007-2014 Sonatype, Inc.
+ * All rights reserved. Includes the third-party code listed at http://links.sonatype.com/products/nexus/oss/attributions.
+ *
+ * This program and the accompanying materials are made available under the terms of the Eclipse Public License Version 1.0,
+ * which accompanies this distribution and is available at http://www.eclipse.org/legal/epl-v10.html.
+ *
+ * Sonatype Nexus (TM) Professional Version is available from Sonatype, Inc. "Sonatype" and "Sonatype Nexus" are trademarks
+ * of Sonatype, Inc. Apache Maven is a trademark of the Apache Software Foundation. M2eclipse is a trademark of the
+ * Eclipse Foundation. All other trademarks are the property of their respective owners.
+ */
 package org.sonatype.nexus.blobstore.file;
 
 import java.io.ByteArrayInputStream;
@@ -23,6 +34,7 @@ import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class FileBlobStoreTest
@@ -51,7 +63,7 @@ public class FileBlobStoreTest
   @Test(expected = IllegalArgumentException.class)
   public void createRequiresHeaders() {
     final ByteArrayInputStream inputStream = new ByteArrayInputStream(new byte[100]);
-    final HashMap<String, String> headers = new HashMap<String, String>();
+    final HashMap<String, String> headers = new HashMap<>();
     fileBlobStore.create(inputStream, headers);
   }
 
@@ -78,5 +90,51 @@ public class FileBlobStoreTest
 
     assertTrue("Creation time should be very recent",
         metrics.getCreationTime().isAfter(new DateTime().minusSeconds(2)));
+  }
+
+  @Test
+  public void getExistingBlob() throws Exception {
+
+    final BlobId fakeId = new BlobId("fakeId");
+    final BlobMetadata metadata = mock(BlobMetadata.class);
+    when(metadataStore.get(fakeId)).thenReturn(metadata);
+    when(metadata.isBlobMarkedForDeletion()).thenReturn(false);
+    when(metadata.getMetrics()).thenReturn(mock(BlobMetrics.class));
+
+    final Path fakePath = mock(Path.class);
+    when(pathPolicy.forContent(fakeId)).thenReturn(fakePath);
+    when(fileOps.exists(fakePath)).thenReturn(true);
+
+    when(fileOps.openInputStream(fakePath)).thenReturn(mock(InputStream.class));
+
+    final Blob blob = fileBlobStore.get(fakeId);
+    assertThat(blob.getId(), is(equalTo(fakeId)));
+  }
+
+  @Test
+  public void deletingMarksAsDeleted() {
+    final BlobId fakeId = new BlobId("fakeId");
+    final BlobMetadata metadata = mock(BlobMetadata.class);
+    when(metadataStore.get(fakeId)).thenReturn(metadata);
+
+    // The blob isn't already deleted
+    when(metadata.isBlobMarkedForDeletion()).thenReturn(false);
+
+    final boolean deleted = fileBlobStore.delete(fakeId);
+    assertThat(deleted, is(equalTo(true)));
+
+    verify(metadata).setBlobMarkedForDeletion(true);
+  }
+
+  @Test
+  public void secondDeletionRedundant() {
+
+    final BlobId fakeId = new BlobId("testId");
+    final BlobMetadata metadata = mock(BlobMetadata.class);
+    when(metadataStore.get(fakeId)).thenReturn(metadata);
+    when(metadata.isBlobMarkedForDeletion()).thenReturn(true);
+
+    final boolean deleted = fileBlobStore.delete(fakeId);
+    assertThat(deleted, is(equalTo(false)));
   }
 }

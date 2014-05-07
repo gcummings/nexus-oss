@@ -1,3 +1,15 @@
+/*
+ * Sonatype Nexus (TM) Open Source Version
+ * Copyright (c) 2007-2014 Sonatype, Inc.
+ * All rights reserved. Includes the third-party code listed at http://links.sonatype.com/products/nexus/oss/attributions.
+ *
+ * This program and the accompanying materials are made available under the terms of the Eclipse Public License Version 1.0,
+ * which accompanies this distribution and is available at http://www.eclipse.org/legal/epl-v10.html.
+ *
+ * Sonatype Nexus (TM) Professional Version is available from Sonatype, Inc. "Sonatype" and "Sonatype Nexus" are trademarks
+ * of Sonatype, Inc. Apache Maven is a trademark of the Apache Software Foundation. M2eclipse is a trademark of the
+ * Eclipse Foundation. All other trademarks are the property of their respective owners.
+ */
 package org.sonatype.nexus.blobstore.file;
 
 import java.io.IOException;
@@ -7,6 +19,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Map;
 
 import javax.annotation.Nullable;
+import javax.inject.Inject;
 
 import org.sonatype.nexus.blobstore.api.Blob;
 import org.sonatype.nexus.blobstore.api.BlobId;
@@ -25,6 +38,8 @@ import org.slf4j.LoggerFactory;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
+ * A {@link BlobStore} that stores its content on the file system, and metadata in a {@link BlobMetadataStore}.
+ *
  * @since 3.0
  */
 public class FileBlobStore
@@ -44,20 +59,15 @@ public class FileBlobStore
 
   private BlobMetadataStore metadataStore;
 
+  @Inject
   public FileBlobStore(final String name, final BlobIdFactory blobIdFactory, final FilePathPolicy paths,
                        final FileOperations fileOperations, final BlobMetadataStore metadataStore)
   {
-    checkNotNull(name);
-    checkNotNull(blobIdFactory);
-    checkNotNull(paths);
-    checkNotNull(fileOperations);
-    checkNotNull(metadataStore);
-
-    this.name = name;
-    this.blobIdFactory = blobIdFactory;
-    this.paths = paths;
-    this.fileOperations = fileOperations;
-    this.metadataStore = metadataStore;
+    this.name = checkNotNull(name);
+    this.blobIdFactory = checkNotNull(blobIdFactory);
+    this.paths = checkNotNull(paths);
+    this.fileOperations = checkNotNull(fileOperations);
+    this.metadataStore = checkNotNull(metadataStore);
   }
 
   @Override
@@ -103,7 +113,7 @@ public class FileBlobStore
     checkNotNull(streamMetrics);
     final DateTime creationTime = new DateTime();
 
-    return new FileBlobMetrics(creationTime, streamMetrics.getSHA1(), streamMetrics.getSize());
+    return new BlobMetrics(creationTime, streamMetrics.getSHA1(), streamMetrics.getSize());
   }
 
   @Nullable
@@ -280,34 +290,4 @@ public class FileBlobStore
     }
   }
 
-  private static class FileBlobMetrics
-      implements BlobMetrics
-  {
-    private final DateTime creationTime;
-
-    private final String SHA1Hash;
-
-    private final long contentSize;
-
-    private FileBlobMetrics(final DateTime creationTime, final String SHA1Hash, final long contentSize) {
-      this.creationTime = creationTime;
-      this.SHA1Hash = SHA1Hash;
-      this.contentSize = contentSize;
-    }
-
-    @Override
-    public DateTime getCreationTime() {
-      return creationTime;
-    }
-
-    @Override
-    public String getSHA1Hash() {
-      return SHA1Hash;
-    }
-
-    @Override
-    public long getContentSize() {
-      return contentSize;
-    }
-  }
 }

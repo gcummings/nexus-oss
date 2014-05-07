@@ -12,8 +12,6 @@
  */
 package org.sonatype.nexus.blobstore.api;
 
-import com.google.common.base.Preconditions;
-
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
@@ -28,6 +26,10 @@ public class BlobId
   public BlobId(final String id) {
     checkNotNull(id);
     this.id = id;
+  }
+
+  public String getId() {
+    return id;
   }
 
   @Override

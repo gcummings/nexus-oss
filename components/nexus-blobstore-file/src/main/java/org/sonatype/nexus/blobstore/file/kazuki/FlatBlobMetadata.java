@@ -10,40 +10,39 @@
  * of Sonatype, Inc. Apache Maven is a trademark of the Apache Software Foundation. M2eclipse is a trademark of the
  * Eclipse Foundation. All other trademarks are the property of their respective owners.
  */
-package org.sonatype.nexus.blobstore.file;
+package org.sonatype.nexus.blobstore.file.kazuki;
 
 import java.util.Map;
 
-import org.sonatype.nexus.blobstore.api.BlobId;
-import org.sonatype.nexus.blobstore.api.BlobMetrics;
-
-import static com.google.common.base.Preconditions.checkNotNull;
+import org.joda.time.DateTime;
 
 /**
- * Metadata about a blob content, including headers, metrics and deleted status.
+ * A flattened version of blob metadata, suitable for storing in Kazuki KV stores.
+ *
+ * TODO: Consider getting rid of the duplication with BlobMetadata.
  *
  * @since 3.0
  */
-public class BlobMetadata
+public class FlatBlobMetadata
 {
-  private BlobId blobId;
+  private String blobId;
 
   private boolean blobMarkedForDeletion;
 
   private Map<String, String> headers;
 
-  private BlobMetrics metrics;
+  private DateTime creationTime;
 
-  public BlobMetadata(final BlobId blobId, final Map<String, String> headers) {
-    checkNotNull(blobId);
-    checkNotNull(headers);
+  private String sha1Hash;
 
-    this.blobId = blobId;
-    this.headers = headers;
+  private long contentSize;
+
+  public String getBlobId() {
+    return blobId;
   }
 
-  public BlobId getBlobId() {
-    return blobId;
+  public void setBlobId(final String blobId) {
+    this.blobId = blobId;
   }
 
   public boolean isBlobMarkedForDeletion() {
@@ -58,21 +57,43 @@ public class BlobMetadata
     return headers;
   }
 
-  public void setMetrics(final BlobMetrics metrics) {
-    this.metrics = metrics;
+  public void setHeaders(final Map<String, String> headers) {
+    this.headers = headers;
   }
 
-  public BlobMetrics getMetrics() {
-    return metrics;
+  public DateTime getCreationTime() {
+    return creationTime;
+  }
+
+  public void setCreationTime(final DateTime creationTime) {
+    this.creationTime = creationTime;
+  }
+
+  public String getSha1Hash() {
+    return sha1Hash;
+  }
+
+  public void setSha1Hash(final String sha1Hash) {
+    this.sha1Hash = sha1Hash;
+  }
+
+  public long getContentSize() {
+    return contentSize;
+  }
+
+  public void setContentSize(final long contentSize) {
+    this.contentSize = contentSize;
   }
 
   @Override
   public String toString() {
-    return "BlobMetadata{" +
-        "blobId=" + blobId +
+    return "FlatBlobMetadata{" +
+        "blobId='" + blobId + '\'' +
         ", blobMarkedForDeletion=" + blobMarkedForDeletion +
         ", headers=" + headers +
-        ", metrics=" + metrics +
+        ", creationTime=" + creationTime +
+        ", sha1Hash='" + sha1Hash + '\'' +
+        ", contentSize=" + contentSize +
         '}';
   }
 }

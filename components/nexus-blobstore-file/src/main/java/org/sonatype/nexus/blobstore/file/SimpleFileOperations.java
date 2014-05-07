@@ -28,6 +28,9 @@ import com.google.common.io.ByteStreams;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+import static org.sonatype.nexus.blobstore.file.MetricsInputStream.metricsInputStream;
+
 /**
  * @since 3.0
  */
@@ -38,12 +41,14 @@ public class SimpleFileOperations
 
   @Override
   public StreamMetrics create(final Path path, final InputStream data) throws IOException, NoSuchAlgorithmException {
+    checkNotNull(path);
+    checkNotNull(data);
     ensureDirectoryExists(path.getParent());
 
-    final MetricsInputStream metrics = MetricsInputStream.metricsInputStream(data, "SHA1");
+    final MetricsInputStream metrics = metricsInputStream(data, "SHA1");
 
     try (final OutputStream outputStream = Files.newOutputStream(path, StandardOpenOption.CREATE_NEW)) {
-      ByteStreams.copy(data, outputStream);
+      ByteStreams.copy(metrics, outputStream);
       data.close();
     }
 
@@ -51,29 +56,27 @@ public class SimpleFileOperations
   }
 
   @Override
-  public void create(final Path path, final byte[] data) throws IOException {
-    ensureDirectoryExists(path.getParent());
-    Files.write(path, data, StandardOpenOption.CREATE_NEW);
-  }
-
-  @Override
   public boolean exists(final Path path) {
+    checkNotNull(path);
     return Files.exists(path);
   }
 
   @Override
   public InputStream openInputStream(final Path path) throws IOException {
+    checkNotNull(path);
     return Files.newInputStream(path, StandardOpenOption.READ);
   }
 
   @Override
   public Date fileCreationDate(final Path path) throws IOException {
+    checkNotNull(path);
     BasicFileAttributes attr = Files.readAttributes(path, BasicFileAttributes.class);
     return new Date(attr.creationTime().toMillis());
   }
 
   @Override
   public String computeSha1Hash(final Path path) throws IOException {
+    checkNotNull(path);
     try (InputStream inputStream = openInputStream(path)) {
       return DigesterUtils.getSha1Digest(inputStream);
     }
@@ -81,11 +84,20 @@ public class SimpleFileOperations
 
   @Override
   public boolean delete(final Path path) throws IOException {
-    return Files.deleteIfExists(path);
+    checkNotNull(path);
+    try {
+      return Files.deleteIfExists(path);
+    }
+    finally {
+      if (exists(path)) {
+        throw new IOException("File was not successfully deleted.");
+      }
+    }
   }
 
   @Override
   public long fileSize(final Path path) throws IOException {
+    checkNotNull(path);
     return Files.size(path);
   }
 
@@ -94,6 +106,7 @@ public class SimpleFileOperations
    * threads aren't fighting to create the same directories at the same time.
    */
   private synchronized void ensureDirectoryExists(final Path directory) throws IOException {
+    checkNotNull(directory);
     if (!exists(directory)) {
       Files.createDirectories(directory);
     }

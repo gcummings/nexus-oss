@@ -12,26 +12,40 @@
  */
 package org.sonatype.nexus.blobstore.file;
 
-import javax.annotation.Nullable;
+import java.util.List;
 
 import org.sonatype.nexus.blobstore.api.BlobId;
-import org.sonatype.nexus.blobstore.api.BlobStoreMetrics;
-import org.sonatype.sisu.goodies.lifecycle.Lifecycle;
+
+import static java.util.Arrays.asList;
 
 /**
+ * Helps convert BlobIds to file paths safely.
+ *
  * @since 3.0
  */
-public interface BlobMetadataStore
-    extends Lifecycle
+public class BlobIdEscaper
 {
-  void add(BlobMetadata metadata);
+  private static final String PERIOD = "\\.";
 
-  @Nullable
-  BlobMetadata get(BlobId blobId);
+  private static final String SINGLE_BACKSLASH = "\\\\";
 
-  void update(BlobMetadata metadata);
+  private static final String SINGLE_FORWARD_SLASH = "/";
 
-  void delete(BlobId blobId);
+  /**
+   * Escapes directory navigation characters that might happen to occur in blob IDs.
+   */
+  public String toFileName(BlobId blobId) {
 
-  BlobStoreMetrics getBlobStoreMetrics();
+    String inString = blobId.getId();
+    return replaceAll(inString, asList(PERIOD, SINGLE_BACKSLASH, SINGLE_FORWARD_SLASH), "-");
+  }
+
+  private String replaceAll(String original, final List<String> unsafeStrings, final String replacement) {
+    for (String unsafe : unsafeStrings) {
+
+      original = original.replaceAll(unsafe, replacement);
+    }
+
+    return original;
+  }
 }

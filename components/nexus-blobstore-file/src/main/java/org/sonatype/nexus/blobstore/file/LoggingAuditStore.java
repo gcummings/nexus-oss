@@ -12,12 +12,25 @@
  */
 package org.sonatype.nexus.blobstore.file;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
- * An interface that records audit-relevant events in the file blob store.
+ * A trivial implementation of the {@link BlobAuditStore} that just logs {@link BlobAuditEntry}s to SLF4J
+ * at INFO level.
  *
  * @since 3.0
  */
-public interface BlobAuditStore
+public class LoggingAuditStore
+    implements BlobAuditStore
 {
-  void add(BlobAuditEntry auditEntry);
+  private static final Logger logger = LoggerFactory.getLogger(LoggingAuditStore.class);
+
+  @Override
+  public void add(final BlobAuditEntry auditEntry) {
+
+    if (logger.isInfoEnabled()) {
+      logger.info(auditEntry.toString());
+    }
+  }
 }

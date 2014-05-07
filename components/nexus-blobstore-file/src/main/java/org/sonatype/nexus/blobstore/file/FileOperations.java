@@ -31,11 +31,6 @@ public interface FileOperations
    */
   StreamMetrics create(Path path, InputStream data) throws IOException, NoSuchAlgorithmException;
 
-  /**
-   * Creates a file (and its containing directories, if necessary) and populates it from the byte array.
-   */
-  void create(Path path, byte[] data) throws IOException;
-
   boolean exists(Path path);
 
   InputStream openInputStream(Path path) throws IOException;
