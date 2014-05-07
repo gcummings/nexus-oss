@@ -28,9 +28,4 @@ public interface FilePathPolicy
    * Returns a path to a file where the blob's content should be stored.
    */
   Path forContent(BlobId blobId);
-
-  /**
-   * Returns a path to a file where the blob's headers are stored.
-   */
-  Path forHeader(BlobId blobId);
 }
