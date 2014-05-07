@@ -27,7 +27,6 @@ import org.sonatype.nexus.configuration.application.ApplicationDirectoriesImpl;
 import org.sonatype.sisu.litmus.testsupport.TestSupport;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.common.io.ByteStreams;
 import com.google.common.io.Files;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;

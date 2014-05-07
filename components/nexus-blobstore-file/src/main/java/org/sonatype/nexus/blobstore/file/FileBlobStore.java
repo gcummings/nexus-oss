@@ -84,8 +84,7 @@ public class FileBlobStore
 
     try {
       // If the storing of bytes fails, we record a reminder to clean up afterwards
-      final BlobMetadata metadata = new BlobMetadata(blobId, headers);
-      metadata.setBlobMarkedForDeletion(true);
+      final BlobMetadata metadata = new BlobMetadata(blobId, State.CREATING, headers);
       metadataStore.add(metadata);
 
       logger.debug("Writing blob {} to {}", blobId, paths.forContent(blobId));
@@ -101,7 +100,7 @@ public class FileBlobStore
 
       metadata.setMetrics(metrics);
       // Storing the content went fine, so we can now unmark this for deletion
-      metadata.setBlobMarkedForDeletion(false);
+      metadata.setState(State.ALIVE);
       metadataStore.update(metadata);
 
       return blob;
@@ -129,8 +128,8 @@ public class FileBlobStore
       return null;
     }
 
-    if (metadata.isBlobMarkedForDeletion()) {
-      logger.debug("Attempt to access blob scheduled for deletion {}", blobId);
+    if (!metadata.isAlive()) {
+      logger.debug("Attempt to access blob {} in state {}", blobId, metadata.getState());
       return null;
     }
 
@@ -157,13 +156,13 @@ public class FileBlobStore
       logger.debug("Attempt to mark-for-delete non-existent blob {}", blobId);
       return false;
     }
-    else if (metadata.isBlobMarkedForDeletion()) {
-      logger.debug("Attempt to mark-for-delete blob already marked for deletion {}", blobId);
+    else if (!metadata.isAlive()) {
+      logger.debug("Attempt to delete blob {} in state {}", blobId, metadata.getState());
       return false;
     }
 
-    metadata.setBlobMarkedForDeletion(true);
-    // TODO: Handle concurrent modification of metadata
+    metadata.setState(State.MARKED_FOR_DELETION);
+    // TODO: Handle concurrent modification of metadata, potentially with kazuki's upcoming optimistic locking
     metadataStore.update(metadata);
     return true;
   }
@@ -244,6 +243,12 @@ public class FileBlobStore
   @Override
   public BlobStoreListener getBlobStoreListener() {
     return listener;
+  }
+
+  @Override
+  public void compact() {
+    // what blob Ids do we need to delete?
+    // delete them all
   }
 
   private StreamMetrics storeBlob(final BlobId blobId, final InputStream blobData) throws IOException {
