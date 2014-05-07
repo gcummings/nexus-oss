@@ -20,6 +20,7 @@ import javax.inject.Inject;
 
 import org.sonatype.nexus.blobstore.api.Blob;
 import org.sonatype.nexus.blobstore.api.BlobMetrics;
+import org.sonatype.nexus.blobstore.api.BlobStoreMetrics;
 import org.sonatype.nexus.blobstore.file.guice.FileBlobStoreModule;
 import org.sonatype.nexus.configuration.application.ApplicationDirectories;
 import org.sonatype.nexus.configuration.application.ApplicationDirectoriesImpl;
@@ -39,6 +40,7 @@ import org.junit.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.sonatype.nexus.blobstore.api.BlobStore.AUDIT_INFO_HEADER;
@@ -100,6 +102,12 @@ public class FileBlobStoreIT
 
     final Blob deletedBlob = blobStore.get(blob.getId());
     assertThat(deletedBlob, is(nullValue()));
+
+
+    final BlobStoreMetrics storeMetrics = blobStore.getMetrics();
+    assertThat(storeMetrics.getBlobCount(), is(equalTo(1L)));
+    assertThat(storeMetrics.getTotalSize(), is(equalTo((long) TEST_DATA_LENGTH)));
+    assertThat(storeMetrics.getAvailableSpace(), is(greaterThan(0L)));
   }
 
   @Test

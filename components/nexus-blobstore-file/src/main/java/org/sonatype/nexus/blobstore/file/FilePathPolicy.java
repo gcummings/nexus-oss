@@ -25,6 +25,11 @@ import org.sonatype.nexus.blobstore.api.BlobId;
 public interface FilePathPolicy
 {
   /**
+   * Returns the root directory that holds all of the content files.
+   */
+  Path getRoot();
+
+  /**
    * Returns a path to a file where the blob's content should be stored.
    */
   Path forContent(BlobId blobId);

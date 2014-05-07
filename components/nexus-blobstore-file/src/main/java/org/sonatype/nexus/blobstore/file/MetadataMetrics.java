@@ -12,25 +12,32 @@
  */
 package org.sonatype.nexus.blobstore.file;
 
-import javax.annotation.Nullable;
-
-import org.sonatype.nexus.blobstore.api.BlobId;
-import org.sonatype.sisu.goodies.lifecycle.Lifecycle;
-
 /**
  * @since 3.0
  */
-public interface BlobMetadataStore
-    extends Lifecycle
+public class MetadataMetrics
 {
-  void add(BlobMetadata metadata);
+  private long blobCount;
 
-  @Nullable
-  BlobMetadata get(BlobId blobId);
+  private long totalSize;
 
-  void update(BlobMetadata metadata);
+  public MetadataMetrics(final long blobCount, final long totalSize) {
+    this.blobCount = blobCount;
+    this.totalSize = totalSize;
+  }
 
-  void delete(BlobId blobId);
+  /**
+   * Get an approximate count of the number of blobs in the blob store.
+   */
+  public long getBlobCount() {
+    return blobCount;
+  }
 
-  MetadataMetrics getMetadataMetrics();
+  /**
+   * Get the approximate total storage space consumed by this blob store in bytes, including blobs, headers, and any
+   * other metadata required by the store.
+   */
+  public long getTotalSize() {
+    return totalSize;
+  }
 }

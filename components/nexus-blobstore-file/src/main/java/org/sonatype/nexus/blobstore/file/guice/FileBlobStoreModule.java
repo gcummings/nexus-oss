@@ -36,7 +36,7 @@ import io.kazuki.v0.store.lifecycle.LifecycleModule;
 import io.kazuki.v0.store.sequence.SequenceServiceConfiguration;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static org.sonatype.nexus.blobstore.file.kazuki.KazukiBlobMetadataStore.METADATA_SCHEMA_NAME;
+import static org.sonatype.nexus.blobstore.file.kazuki.KazukiBlobMetadataStore.METADATA_TYPE;
 
 /**
  * File blob store Guice module.
@@ -88,7 +88,7 @@ public class FileBlobStoreModule
     builder.withPartitionName("default");
     builder.withPartitionSize(100_000L); // TODO: Confirm this is sensible
     builder.withStrictTypeCreation(true);
-    builder.withDataType(METADATA_SCHEMA_NAME);
+    builder.withDataType(METADATA_TYPE);
     builder.withSecondaryIndex(true);
 
     return builder.build();
