@@ -117,7 +117,6 @@ public class KazukiBlobMetadataStore
   @Override
   public void add(final BlobMetadata metadata) {
     final FlatBlobMetadata flat = flatten(metadata);
-    System.err.println(flat);
     try {
       final Key key = kvStore
           .create(METADATA_TYPE, FlatBlobMetadata.class, flat, TypeValidation.STRICT);

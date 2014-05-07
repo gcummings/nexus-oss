@@ -127,11 +127,6 @@ public class FileBlobStoreIT
 
     final Blob newBlob = blobStore.get(blob.getId());
     assertThat(newBlob, is(nullValue()));
-
-    // read the rest of the bytes and see what happens
-    final byte[] remainingBytes = ByteStreams.toByteArray(inputStream);
-    System.err.println(remainingBytes);
-    inputStream.close();
   }
 
   /**
