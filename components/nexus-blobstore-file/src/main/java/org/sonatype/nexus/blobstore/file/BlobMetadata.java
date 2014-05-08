@@ -14,7 +14,6 @@ package org.sonatype.nexus.blobstore.file;
 
 import java.util.Map;
 
-import org.sonatype.nexus.blobstore.api.BlobId;
 import org.sonatype.nexus.blobstore.api.BlobMetrics;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -26,23 +25,15 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public class BlobMetadata
 {
-  private BlobId blobId;
-
-
   private State state;
 
   private Map<String, String> headers;
 
   private BlobMetrics metrics;
 
-  public BlobMetadata(final BlobId blobId, State state, final Map<String, String> headers) {
-    this.blobId = checkNotNull(blobId, "blob ID");
+  public BlobMetadata(State state, final Map<String, String> headers) {
     this.state = checkNotNull(state);
     this.headers = checkNotNull(headers);
-  }
-
-  public BlobId getBlobId() {
-    return blobId;
   }
 
   public State getState() {
@@ -72,7 +63,6 @@ public class BlobMetadata
   @Override
   public String toString() {
     return "BlobMetadata{" +
-        "blobId=" + blobId +
         ", state=" + state +
         ", headers=" + headers +
         ", metrics=" + metrics +

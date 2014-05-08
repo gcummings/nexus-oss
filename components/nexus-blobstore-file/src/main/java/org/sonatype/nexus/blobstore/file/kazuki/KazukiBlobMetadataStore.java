@@ -15,7 +15,6 @@ package org.sonatype.nexus.blobstore.file.kazuki;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
 import javax.annotation.Nullable;
 import javax.inject.Inject;
@@ -30,15 +29,12 @@ import org.sonatype.nexus.blobstore.file.MetadataMetrics;
 import org.sonatype.nexus.blobstore.file.State;
 import org.sonatype.sisu.goodies.lifecycle.LifecycleSupport;
 
-import com.google.common.collect.ImmutableMap;
 import io.kazuki.v0.store.KazukiException;
 import io.kazuki.v0.store.Key;
 import io.kazuki.v0.store.index.SecondaryIndexStore;
-import io.kazuki.v0.store.index.UniqueEntityDescription;
 import io.kazuki.v0.store.index.query.QueryBuilder;
 import io.kazuki.v0.store.index.query.QueryOperator;
 import io.kazuki.v0.store.index.query.QueryTerm;
-import io.kazuki.v0.store.index.query.ValueHolder;
 import io.kazuki.v0.store.index.query.ValueType;
 import io.kazuki.v0.store.keyvalue.KeyValueIterable;
 import io.kazuki.v0.store.keyvalue.KeyValueIterator;
@@ -51,6 +47,7 @@ import io.kazuki.v0.store.schema.model.Attribute.Type;
 import io.kazuki.v0.store.schema.model.AttributeTransform;
 import io.kazuki.v0.store.schema.model.IndexAttribute;
 import io.kazuki.v0.store.schema.model.Schema;
+import io.kazuki.v0.store.sequence.KeyImpl;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.Arrays.asList;
@@ -76,7 +73,7 @@ public class KazukiBlobMetadataStore
    */
   private static final String STATE_INDEX = "stateIndex";
 
-  public static final String METADATA_TYPE = "fileblobstore.metadata";
+  public static final String METADATA_TYPE = "blobdata";
 
   private Lifecycle lifecycle;
 
@@ -108,15 +105,12 @@ public class KazukiBlobMetadataStore
 
     if (schemaStore.retrieveSchema(METADATA_TYPE) == null) {
       Schema schema = new Schema.Builder()
-          .addAttribute("blobId", Type.UTF8_SMALLSTRING, false)
           .addAttribute("state", Type.ENUM,
               Arrays.asList((Object) State.CREATING, State.ALIVE, State.MARKED_FOR_DELETION), false)
           .addAttribute("headers", Type.MAP, false)
           .addAttribute("creationTime", Type.UTC_DATE_SECS, true)
           .addAttribute("sha1Hash", Type.UTF8_SMALLSTRING, true)
           .addAttribute("contentSize", Type.I64, false)
-          .addIndex(BLOB_ID_INDEX,
-              asList(new IndexAttribute("blobId", SortDirection.ASCENDING, AttributeTransform.NONE)), true)
           .addIndex(STATE_INDEX,
               asList(new IndexAttribute("state", SortDirection.ASCENDING, AttributeTransform.NONE)), false)
           .build();
@@ -135,15 +129,16 @@ public class KazukiBlobMetadataStore
   }
 
   @Override
-  public void add(final BlobMetadata metadata) {
+  public BlobId add(final BlobMetadata metadata) {
     final FlatBlobMetadata flat = flatten(metadata);
+    Key key = null;
     try {
-      final Key key = kvStore
-          .create(METADATA_TYPE, FlatBlobMetadata.class, flat, TypeValidation.STRICT);
-      log.debug("Adding metadata for blob {} with KZ key {}", metadata.getBlobId(), key);
+      key = kvStore.create(METADATA_TYPE, FlatBlobMetadata.class, flat, TypeValidation.STRICT);
+      log.debug("Adding metadata for blob {}", asBlobId(key));
+      return asBlobId(key);
     }
     catch (KazukiException e) {
-      throw new BlobStoreException(e, "unknown", metadata.getBlobId());
+      throw new BlobStoreException(e, "unknown", asBlobId(key));
     }
   }
 
@@ -151,11 +146,12 @@ public class KazukiBlobMetadataStore
   @Override
   public BlobMetadata get(final BlobId blobId) {
     try {
-      final Key key = findKey(blobId);
-      if (key == null) {
+      final Key key = asKey(checkNotNull(blobId));
+      final FlatBlobMetadata metadata = findMetadata(key);
+      if (metadata == null) {
         return null;
       }
-      return expand(findMetadata(key));
+      return expand(metadata);
     }
     catch (KazukiException e) {
       throw new BlobStoreException(e, "unknown", blobId);
@@ -163,21 +159,22 @@ public class KazukiBlobMetadataStore
   }
 
   @Override
-  public void update(final BlobMetadata metadata) {
-    Key key = findKey(metadata.getBlobId());
+  public void update(final BlobId blobId, final BlobMetadata metadata) {
+    Key key = asKey(checkNotNull(blobId));
     try {
       final FlatBlobMetadata flat = flatten(metadata);
       kvStore.update(key, FlatBlobMetadata.class, flat);
     }
     catch (KazukiException e) {
-      throw new BlobStoreException(e, "unknown", metadata.getBlobId());
+      throw new BlobStoreException(e, "unknown", blobId);
     }
   }
 
   @Override
   public void delete(final BlobId blobId) {
+    checkNotNull(blobId);
     try {
-      kvStore.delete(findKey(blobId));
+      kvStore.delete(asKey(blobId));
     }
     catch (KazukiException e) {
       throw new BlobStoreException(e, "unknown", blobId);
@@ -208,12 +205,7 @@ public class KazukiBlobMetadataStore
         if (key == null) {
           return null;
         }
-        try {
-          return new BlobId(kvStore.retrieve(key, FlatBlobMetadata.class).getBlobId());
-        }
-        catch (KazukiException e) {
-          throw new BlobStoreException(e, "unknown", null);
-        }
+        return asBlobId(key);
       }
 
       @Override
@@ -245,22 +237,6 @@ public class KazukiBlobMetadataStore
     return new MetadataMetrics(blobCount, totalSize);
   }
 
-  private Key findKey(final BlobId blobId) {
-    final UniqueEntityDescription<FlatBlobMetadata> blobQuery = new UniqueEntityDescription<>(
-        METADATA_TYPE, FlatBlobMetadata.class, BLOB_ID_INDEX, metadataSchema,
-        ImmutableMap.of("blobId", new ValueHolder(ValueType.STRING, blobId.getId())));
-
-    final Map<UniqueEntityDescription, Key> keyMap = secondaryIndexStore
-        .multiRetrieveUniqueKeys(Arrays.<UniqueEntityDescription>asList(blobQuery));
-
-    final boolean keyFound = keyMap.containsKey(blobQuery);
-    if (!keyFound) {
-      throw new BlobStoreException("Metadata not found.", "unknown", blobId);
-    }
-
-    return keyMap.get(blobQuery);
-  }
-
   public FlatBlobMetadata findMetadata(Key key) throws KazukiException {
     checkNotNull(key);
     return kvStore.retrieve(key, FlatBlobMetadata.class);
@@ -269,7 +245,6 @@ public class KazukiBlobMetadataStore
   private FlatBlobMetadata flatten(final BlobMetadata metadata) {
     final FlatBlobMetadata flat = new FlatBlobMetadata();
 
-    flat.setBlobId(metadata.getBlobId().getId());
     flat.setState(metadata.getState());
     final BlobMetrics metrics = metadata.getMetrics();
     if (metrics != null) {
@@ -277,6 +252,7 @@ public class KazukiBlobMetadataStore
       flat.setContentSize(metrics.getContentSize());
 
       // TODO: Uncomment this once the kazuki bug for date handling is fixed
+      // c.f. https://github.com/kazukidb/kazuki/issues/12
       //flat.setCreationTime(metrics.getCreationTime());
     }
     flat.setHeaders(metadata.getHeaders());
@@ -284,8 +260,18 @@ public class KazukiBlobMetadataStore
   }
 
   private BlobMetadata expand(final FlatBlobMetadata flat) {
-    final BlobMetadata metadata = new BlobMetadata(new BlobId(flat.getBlobId()), flat.getState(), flat.getHeaders());
+    final BlobMetadata metadata = new BlobMetadata(flat.getState(), flat.getHeaders());
     metadata.setMetrics(new BlobMetrics(flat.getCreationTime(), flat.getSha1Hash(), flat.getContentSize()));
     return metadata;
+  }
+
+  private BlobId asBlobId(Key key) {
+    return new BlobId(key.toString());
+  }
+
+  private Key asKey(BlobId blobId) {
+    // TODO: This isn't strictly legal; I need a way to synthesize kz keys from strings
+    // See https://github.com/kazukidb/kazuki/issues/14
+    return KeyImpl.valueOf(blobId.getId());
   }
 }

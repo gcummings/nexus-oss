@@ -27,8 +27,6 @@ import org.joda.time.DateTime;
  */
 class FlatBlobMetadata
 {
-  private String blobId;
-
   private State state;
 
   private Map<String, String> headers;
@@ -38,14 +36,6 @@ class FlatBlobMetadata
   private String sha1Hash;
 
   private long contentSize;
-
-  public String getBlobId() {
-    return blobId;
-  }
-
-  public void setBlobId(final String blobId) {
-    this.blobId = blobId;
-  }
 
   public State getState() {
     return state;
@@ -90,7 +80,6 @@ class FlatBlobMetadata
   @Override
   public String toString() {
     return "FlatBlobMetadata{" +
-        "blobId='" + blobId + '\'' +
         ", state=" + state +
         ", headers=" + headers +
         ", creationTime=" + creationTime +
