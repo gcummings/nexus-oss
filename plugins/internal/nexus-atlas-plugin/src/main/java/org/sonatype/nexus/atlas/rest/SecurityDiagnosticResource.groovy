@@ -17,7 +17,7 @@ import org.sonatype.security.SecuritySystem
 import org.sonatype.security.authorization.NoSuchPrivilegeException
 import org.sonatype.security.authorization.NoSuchRoleException
 import org.sonatype.sisu.goodies.common.ComponentSupport
-import org.sonatype.sisu.siesta.common.Resource
+import org.sonatype.siesta.Resource
 
 import javax.inject.Inject
 import javax.inject.Named

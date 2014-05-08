@@ -21,8 +21,8 @@ import javax.inject.Singleton;
 import org.sonatype.configuration.validation.InvalidConfigurationException;
 import org.sonatype.configuration.validation.ValidationMessage;
 import org.sonatype.configuration.validation.ValidationResponse;
-import org.sonatype.sisu.siesta.common.validation.ValidationErrorXO;
-import org.sonatype.sisu.siesta.server.ValidationErrorsExceptionMappersSupport;
+//import org.sonatype.sisu.siesta.common.validation.ValidationErrorXO;
+//import org.sonatype.sisu.siesta.server.ValidationErrorsExceptionMappersSupport;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
@@ -35,29 +35,29 @@ import com.google.common.collect.Lists;
 @Named
 @Singleton
 public class InvalidConfigurationExceptionMapper
-    extends ValidationErrorsExceptionMappersSupport<InvalidConfigurationException>
+    //extends ValidationErrorsExceptionMappersSupport<InvalidConfigurationException>
 {
 
-  @Override
-  protected List<ValidationErrorXO> getValidationErrors(final InvalidConfigurationException exception) {
-    final ValidationResponse validationResponse = exception.getValidationResponse();
-    if (validationResponse != null) {
-      final List<ValidationMessage> validationErrors = validationResponse.getValidationErrors();
-      if (validationErrors != null && !validationErrors.isEmpty()) {
-        return Lists.transform(validationErrors, new Function<ValidationMessage, ValidationErrorXO>()
-        {
-          @Nullable
-          @Override
-          public ValidationErrorXO apply(@Nullable final ValidationMessage validationMessage) {
-            if (validationMessage != null) {
-              return new ValidationErrorXO(validationMessage.getKey(), validationMessage.getMessage());
-            }
-            return null;
-          }
-        });
-      }
-    }
-    return Lists.newArrayList(new ValidationErrorXO(exception.getMessage()));
-  }
+  //@Override
+  //protected List<ValidationErrorXO> getValidationErrors(final InvalidConfigurationException exception) {
+  //  final ValidationResponse validationResponse = exception.getValidationResponse();
+  //  if (validationResponse != null) {
+  //    final List<ValidationMessage> validationErrors = validationResponse.getValidationErrors();
+  //    if (validationErrors != null && !validationErrors.isEmpty()) {
+  //      return Lists.transform(validationErrors, new Function<ValidationMessage, ValidationErrorXO>()
+  //      {
+  //        @Nullable
+  //        @Override
+  //        public ValidationErrorXO apply(@Nullable final ValidationMessage validationMessage) {
+  //          if (validationMessage != null) {
+  //            return new ValidationErrorXO(validationMessage.getKey(), validationMessage.getMessage());
+  //          }
+  //          return null;
+  //        }
+  //      });
+  //    }
+  //  }
+  //  return Lists.newArrayList(new ValidationErrorXO(exception.getMessage()));
+  //}
 
 }

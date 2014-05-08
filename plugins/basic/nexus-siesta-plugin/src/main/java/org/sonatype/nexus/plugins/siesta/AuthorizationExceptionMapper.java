@@ -19,8 +19,8 @@ import javax.inject.Singleton;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.Response;
 
-import org.sonatype.sisu.siesta.common.error.ErrorXO;
-import org.sonatype.sisu.siesta.server.ErrorExceptionMapperSupport;
+//import org.sonatype.sisu.siesta.common.error.ErrorXO;
+//import org.sonatype.sisu.siesta.server.ErrorExceptionMapperSupport;
 
 import org.apache.shiro.authz.AuthorizationException;
 
@@ -33,42 +33,42 @@ import org.apache.shiro.authz.AuthorizationException;
 @Named
 @Singleton
 public class AuthorizationExceptionMapper
-    extends ErrorExceptionMapperSupport<AuthorizationException>
+    //extends ErrorExceptionMapperSupport<AuthorizationException>
 {
 
-  private static final String AUTH_SCHEME_KEY = "auth.scheme";
-
-  public static final String AUTH_REALM_KEY = "auth.realm";
-
-  private static final String ANONYMOUS_LOGIN = "nexus.anonymous";
-
-  private static final String AUTHENTICATE_HEADER = "WWW-Authenticate";
-
-  @Inject
-  private Provider<HttpServletRequest> httpServletRequestProvider;
-
-  /**
-   * @since 2.5.0
-   */
-  @Override
-  protected Response convert(final AuthorizationException exception, final String id) {
-    final Response.ResponseBuilder builder = Response.fromResponse(super.convert(exception, id));
-
-    final HttpServletRequest servletRequest = httpServletRequestProvider.get();
-    if (servletRequest.getAttribute(ANONYMOUS_LOGIN) != null) {
-      String scheme = (String) servletRequest.getAttribute(AUTH_SCHEME_KEY);
-      String realm = (String) servletRequest.getAttribute(AUTH_REALM_KEY);
-
-      builder
-          .status(Response.Status.UNAUTHORIZED)
-          .header(AUTHENTICATE_HEADER, String.format("%s realm=\"%s\"", scheme, realm));
-    }
-    return builder.build();
-  }
-
-  @Override
-  protected int getStatusCode(final AuthorizationException exception) {
-    return Response.Status.FORBIDDEN.getStatusCode();
-  }
+  //private static final String AUTH_SCHEME_KEY = "auth.scheme";
+  //
+  //public static final String AUTH_REALM_KEY = "auth.realm";
+  //
+  //private static final String ANONYMOUS_LOGIN = "nexus.anonymous";
+  //
+  //private static final String AUTHENTICATE_HEADER = "WWW-Authenticate";
+  //
+  //@Inject
+  //private Provider<HttpServletRequest> httpServletRequestProvider;
+  //
+  ///**
+  // * @since 2.5.0
+  // */
+  //@Override
+  //protected Response convert(final AuthorizationException exception, final String id) {
+  //  final Response.ResponseBuilder builder = Response.fromResponse(super.convert(exception, id));
+  //
+  //  final HttpServletRequest servletRequest = httpServletRequestProvider.get();
+  //  if (servletRequest.getAttribute(ANONYMOUS_LOGIN) != null) {
+  //    String scheme = (String) servletRequest.getAttribute(AUTH_SCHEME_KEY);
+  //    String realm = (String) servletRequest.getAttribute(AUTH_REALM_KEY);
+  //
+  //    builder
+  //        .status(Response.Status.UNAUTHORIZED)
+  //        .header(AUTHENTICATE_HEADER, String.format("%s realm=\"%s\"", scheme, realm));
+  //  }
+  //  return builder.build();
+  //}
+  //
+  //@Override
+  //protected int getStatusCode(final AuthorizationException exception) {
+  //  return Response.Status.FORBIDDEN.getStatusCode();
+  //}
 
 }

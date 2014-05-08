@@ -17,8 +17,8 @@ import javax.inject.Singleton;
 import javax.ws.rs.core.Response;
 
 import org.sonatype.nexus.proxy.NoSuchRepositoryException;
-import org.sonatype.sisu.siesta.common.error.ErrorXO;
-import org.sonatype.sisu.siesta.server.ErrorExceptionMapperSupport;
+//import org.sonatype.sisu.siesta.common.error.ErrorXO;
+//import org.sonatype.sisu.siesta.server.ErrorExceptionMapperSupport;
 
 /**
  * Maps {@link NoSuchRepositoryException} to 404 with a {@link ErrorXO} body.
@@ -28,12 +28,12 @@ import org.sonatype.sisu.siesta.server.ErrorExceptionMapperSupport;
 @Named
 @Singleton
 public class NoSuchRepositoryExceptionMapper
-    extends ErrorExceptionMapperSupport<NoSuchRepositoryException>
+    //extends ErrorExceptionMapperSupport<NoSuchRepositoryException>
 {
 
-  @Override
-  protected int getStatusCode(final NoSuchRepositoryException exception) {
-    return Response.Status.NOT_FOUND.getStatusCode();
-  }
+  //@Override
+  //protected int getStatusCode(final NoSuchRepositoryException exception) {
+  //  return Response.Status.NOT_FOUND.getStatusCode();
+  //}
 
 }
