@@ -15,8 +15,8 @@ package org.sonatype.nexus.blobstore.file;
 /**
  * A representation of the lifecycle of blobs in the store.
  *
-* @since 3.0
-*/
+ * @since 3.0
+ */
 public enum State
 {
   CREATING, ALIVE, MARKED_FOR_DELETION

@@ -25,12 +25,15 @@ import org.sonatype.sisu.goodies.lifecycle.Lifecycle;
 public interface BlobMetadataStore
     extends Lifecycle
 {
-  void add(BlobMetadata metadata);
+  /**
+   * Adds the metadata, and returns the key it's now associated with.
+   */
+  BlobId add(BlobMetadata metadata);
 
   @Nullable
-  BlobMetadata get(BlobId blobId);
+  BlobMetadata get(BlobId key);
 
-  void update(BlobMetadata metadata);
+  void update(BlobId blobId, BlobMetadata metadata);
 
   void delete(BlobId blobId);
 

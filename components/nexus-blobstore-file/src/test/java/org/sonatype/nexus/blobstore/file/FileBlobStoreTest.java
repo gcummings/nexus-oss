@@ -21,7 +21,6 @@ import org.sonatype.nexus.blobstore.api.Blob;
 import org.sonatype.nexus.blobstore.api.BlobId;
 import org.sonatype.nexus.blobstore.api.BlobMetrics;
 import org.sonatype.nexus.blobstore.api.BlobStore;
-import org.sonatype.nexus.blobstore.id.BlobIdFactory;
 import org.sonatype.sisu.litmus.testsupport.TestSupport;
 
 import com.google.common.collect.ImmutableMap;
@@ -33,6 +32,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -40,8 +40,6 @@ import static org.mockito.Mockito.when;
 public class FileBlobStoreTest
     extends TestSupport
 {
-  private BlobIdFactory idFactory;
-
   private FilePathPolicy pathPolicy;
 
   private FileOperations fileOps;
@@ -52,12 +50,11 @@ public class FileBlobStoreTest
 
   @Before
   public void initMocks() {
-    idFactory = mock(BlobIdFactory.class);
     pathPolicy = mock(FilePathPolicy.class);
     fileOps = mock(FileOperations.class);
     metadataStore = mock(BlobMetadataStore.class);
 
-    fileBlobStore = new FileBlobStore("testStore", idFactory, pathPolicy, fileOps, metadataStore);
+    fileBlobStore = new FileBlobStore("testStore", pathPolicy, fileOps, metadataStore);
   }
 
   @Test(expected = IllegalArgumentException.class)
@@ -77,7 +74,7 @@ public class FileBlobStoreTest
     final ImmutableMap<String, String> headers = ImmutableMap
         .of(BlobStore.BLOB_NAME_HEADER, "my blob", BlobStore.AUDIT_INFO_HEADER, "John did this");
 
-    when(idFactory.createBlobId()).thenReturn(fakeId);
+    when(metadataStore.add(any(BlobMetadata.class))).thenReturn(fakeId);
     when(pathPolicy.forContent(fakeId)).thenReturn(fakePath);
     when(fileOps.create(fakePath, inputStream)).thenReturn(new StreamMetrics(contentSize, fakeSHA1));
 

@@ -30,7 +30,6 @@ import org.sonatype.nexus.blobstore.api.BlobStore;
 import org.sonatype.nexus.blobstore.api.BlobStoreException;
 import org.sonatype.nexus.blobstore.api.BlobStoreListener;
 import org.sonatype.nexus.blobstore.api.BlobStoreMetrics;
-import org.sonatype.nexus.blobstore.id.BlobIdFactory;
 
 import com.google.common.base.Preconditions;
 import org.joda.time.DateTime;
@@ -53,8 +52,6 @@ public class FileBlobStore
 
   private BlobStoreListener listener;
 
-  private BlobIdFactory blobIdFactory;
-
   private FilePathPolicy paths;
 
   private FileOperations fileOperations;
@@ -62,11 +59,10 @@ public class FileBlobStore
   private BlobMetadataStore metadataStore;
 
   @Inject
-  public FileBlobStore(final String name, final BlobIdFactory blobIdFactory, final FilePathPolicy paths,
-                       final FileOperations fileOperations, final BlobMetadataStore metadataStore)
+  public FileBlobStore(final String name, final FilePathPolicy paths, final FileOperations fileOperations,
+                       final BlobMetadataStore metadataStore)
   {
     this.name = checkNotNull(name);
-    this.blobIdFactory = checkNotNull(blobIdFactory);
     this.paths = checkNotNull(paths);
     this.fileOperations = checkNotNull(fileOperations);
     this.metadataStore = checkNotNull(metadataStore);
@@ -77,15 +73,15 @@ public class FileBlobStore
     checkNotNull(blobData);
     checkNotNull(headers);
 
-    final BlobId blobId = blobIdFactory.createBlobId();
-
     Preconditions.checkArgument(headers.containsKey(BLOB_NAME_HEADER));
     Preconditions.checkArgument(headers.containsKey(AUDIT_INFO_HEADER));
 
+    BlobId blobId = null;
+
     try {
       // If the storing of bytes fails, we record a reminder to clean up afterwards
-      final BlobMetadata metadata = new BlobMetadata(blobId, State.CREATING, headers);
-      metadataStore.add(metadata);
+      final BlobMetadata metadata = new BlobMetadata(State.CREATING, headers);
+      blobId = metadataStore.add(metadata);
 
       logger.debug("Writing blob {} to {}", blobId, paths.forContent(blobId));
 
@@ -101,7 +97,7 @@ public class FileBlobStore
       metadata.setMetrics(metrics);
       // Storing the content went fine, so we can now unmark this for deletion
       metadata.setState(State.ALIVE);
-      metadataStore.update(metadata);
+      metadataStore.update(blobId, metadata);
 
       return blob;
     }
@@ -163,7 +159,7 @@ public class FileBlobStore
 
     metadata.setState(State.MARKED_FOR_DELETION);
     // TODO: Handle concurrent modification of metadata, potentially with kazuki's upcoming optimistic locking
-    metadataStore.update(metadata);
+    metadataStore.update(blobId, metadata);
     return true;
   }
 

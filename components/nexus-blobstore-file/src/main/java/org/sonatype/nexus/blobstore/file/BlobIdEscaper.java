@@ -31,13 +31,14 @@ public class BlobIdEscaper
 
   private static final String SINGLE_FORWARD_SLASH = "/";
 
+  private static final String COLON = ":";
+
   /**
    * Escapes directory navigation characters that might happen to occur in blob IDs.
    */
   public String toFileName(BlobId blobId) {
-
     String inString = blobId.getId();
-    return replaceAll(inString, asList(PERIOD, SINGLE_BACKSLASH, SINGLE_FORWARD_SLASH), "-");
+    return replaceAll(inString, asList(PERIOD, SINGLE_BACKSLASH, SINGLE_FORWARD_SLASH, COLON), "-");
   }
 
   private String replaceAll(String original, final List<String> unsafeStrings, final String replacement) {
