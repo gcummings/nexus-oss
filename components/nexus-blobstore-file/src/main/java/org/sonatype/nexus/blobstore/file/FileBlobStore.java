@@ -18,6 +18,7 @@ import java.nio.file.FileStore;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.NoSuchAlgorithmException;
+import java.util.Iterator;
 import java.util.Map;
 
 import javax.annotation.Nullable;
@@ -243,8 +244,14 @@ public class FileBlobStore
 
   @Override
   public void compact() {
-    // what blob Ids do we need to delete?
-    // delete them all
+    final Iterator<BlobId> withState = metadataStore.findWithState(State.MARKED_FOR_DELETION);
+    while (withState.hasNext()) {
+      final BlobId blobId = withState.next();
+      // This iterator can occasionally return null
+      if (blobId != null) {
+        deleteHard(blobId);
+      }
+    }
   }
 
   private StreamMetrics storeBlob(final BlobId blobId, final InputStream blobData) throws IOException {

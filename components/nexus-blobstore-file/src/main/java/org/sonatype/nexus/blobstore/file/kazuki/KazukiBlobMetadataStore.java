@@ -12,7 +12,6 @@
  */
 package org.sonatype.nexus.blobstore.file.kazuki;
 
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
@@ -81,8 +80,6 @@ public class KazukiBlobMetadataStore
 
   private SchemaStore schemaStore;
 
-  private Schema metadataSchema;
-
   private SecondaryIndexStore secondaryIndexStore;
 
   // TODO: These injections imply that there is only one metadata store
@@ -105,20 +102,26 @@ public class KazukiBlobMetadataStore
 
     if (schemaStore.retrieveSchema(METADATA_TYPE) == null) {
       Schema schema = new Schema.Builder()
-          .addAttribute("state", Type.ENUM,
-              Arrays.asList((Object) State.CREATING, State.ALIVE, State.MARKED_FOR_DELETION), false)
+          // TODO: Unravel this once https://github.com/kazukidb/kazuki/issues/15 is fixed
+          //.addAttribute("state", Type.ENUM,
+          //    Arrays.asList((Object) State.CREATING, State.ALIVE, State.MARKED_FOR_DELETION), false)
+          .addAttribute("stateAsString", Type.UTF8_SMALLSTRING, false)
+
           .addAttribute("headers", Type.MAP, false)
           .addAttribute("creationTime", Type.UTC_DATE_SECS, true)
           .addAttribute("sha1Hash", Type.UTF8_SMALLSTRING, true)
           .addAttribute("contentSize", Type.I64, false)
+
+              // TODO: Unravel this too, same cause
+              //.addIndex(STATE_INDEX,
+              //    asList(new IndexAttribute("state", SortDirection.ASCENDING, AttributeTransform.NONE)), false)
           .addIndex(STATE_INDEX,
-              asList(new IndexAttribute("state", SortDirection.ASCENDING, AttributeTransform.NONE)), false)
+              asList(new IndexAttribute("stateAsString", SortDirection.ASCENDING, AttributeTransform.NONE)), false)
           .build();
 
       log.info("Creating schema for file blob metadata");
 
       schemaStore.createSchema(METADATA_TYPE, schema);
-      this.metadataSchema = schema;
     }
   }
 
@@ -184,8 +187,7 @@ public class KazukiBlobMetadataStore
   @Override
   public Iterator<BlobId> findWithState(State state) {
     final List<QueryTerm> queryTerms = new QueryBuilder()
-        .andMatchesSingle("state", QueryOperator.EQ, ValueType.STRING, State.MARKED_FOR_DELETION.toString()).build();
-
+        .andMatchesSingle("stateAsString", QueryOperator.EQ, ValueType.STRING, State.MARKED_FOR_DELETION.toString()).build();
     final KeyValueIterable<Key> keys = secondaryIndexStore
         .queryWithoutPagination(METADATA_TYPE, FlatBlobMetadata.class, STATE_INDEX, queryTerms, SortDirection.ASCENDING,
             null, null);
@@ -215,6 +217,11 @@ public class KazukiBlobMetadataStore
     };
   }
 
+  /**
+   * Provides metrics about the blobs in the blob store. The {@link MetadataMetrics#getBlobCount() blob count} only
+   * considers blobs that are currently in {@link State#ALIVE}, but {@link MetadataMetrics#getTotalSize() total size}
+   * includes blobs that are marked for deletion.
+   */
   @Override
   public MetadataMetrics getMetadataMetrics() {
 
@@ -230,7 +237,12 @@ public class KazukiBlobMetadataStore
         // Concurrent modification can cause objects in an iterator to return null.
         continue;
       }
-      blobCount++;
+
+
+      if (State.ALIVE.equals(metadata.getState())) {
+        blobCount++;
+      }
+
       totalSize += metadata.getContentSize();
     }
 

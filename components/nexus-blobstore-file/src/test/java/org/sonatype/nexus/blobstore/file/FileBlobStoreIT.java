@@ -13,6 +13,7 @@
 package org.sonatype.nexus.blobstore.file;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.Random;
 
@@ -90,11 +91,17 @@ public class FileBlobStoreIT
 
     final Blob blob = blobStore.create(new ByteArrayInputStream(content), TEST_HEADERS);
 
-    final byte[] output = IOUtils.toByteArray(blob.getInputStream());
+    final byte[] output = extractContent(blob);
     assertThat("data must survive", content, is(equalTo(output)));
 
     final BlobMetrics metrics = blob.getMetrics();
     assertThat("size must be calculated correctly", metrics.getContentSize(), is(equalTo((long) TEST_DATA_LENGTH)));
+
+    final BlobStoreMetrics storeMetrics = blobStore.getMetrics();
+    assertThat("one blob has been stored", storeMetrics.getBlobCount(), is(equalTo(1L)));
+    assertThat("the blob takes up space in the store", storeMetrics.getTotalSize(), is(
+        equalTo((long) TEST_DATA_LENGTH)));
+    assertThat(storeMetrics.getAvailableSpace(), is(greaterThan(0L)));
 
     final boolean deleted = blobStore.delete(blob.getId());
     assertThat(deleted, is(equalTo(true)));
@@ -102,11 +109,21 @@ public class FileBlobStoreIT
     final Blob deletedBlob = blobStore.get(blob.getId());
     assertThat(deletedBlob, is(nullValue()));
 
+    // Now that we've deleted the blob, there shouldn't be anything left
+    final BlobStoreMetrics storeMetrics2 = blobStore.getMetrics();
+    assertThat("deleted blobs don't count", storeMetrics2.getBlobCount(), is(equalTo(0L)));
+    assertThat("deleted blobs still take up space", storeMetrics2.getTotalSize(), is(equalTo((long) TEST_DATA_LENGTH)));
 
-    final BlobStoreMetrics storeMetrics = blobStore.getMetrics();
-    assertThat(storeMetrics.getBlobCount(), is(equalTo(1L)));
-    assertThat(storeMetrics.getTotalSize(), is(equalTo((long) TEST_DATA_LENGTH)));
-    assertThat(storeMetrics.getAvailableSpace(), is(greaterThan(0L)));
+    blobStore.compact();
+
+    final BlobStoreMetrics storeMetrics3 = blobStore.getMetrics();
+    assertThat("compacting should reclaim deleted blobs' space", storeMetrics3.getTotalSize(), is(equalTo(0L)));
+  }
+
+  private byte[] extractContent(final Blob blob) throws IOException {
+    try (InputStream inputStream = blob.getInputStream()) {
+      return IOUtils.toByteArray(inputStream);
+    }
   }
 
   @Test
