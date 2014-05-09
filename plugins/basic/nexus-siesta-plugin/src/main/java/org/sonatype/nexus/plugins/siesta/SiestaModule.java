@@ -56,6 +56,8 @@ public class SiestaModule
     {
       @Override
       protected void configureServlets() {
+        log.debug("Mount point: {}", MOUNT_POINT);
+
         serve(MOUNT_POINT + "/*").with(SiestaServlet.class);
         filter(MOUNT_POINT + "/*").through(SecurityFilter.class);
       }
