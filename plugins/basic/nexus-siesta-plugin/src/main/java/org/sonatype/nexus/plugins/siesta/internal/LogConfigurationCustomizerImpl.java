@@ -32,6 +32,7 @@ public class LogConfigurationCustomizerImpl
   @Override
   public void customize(final Configuration configuration) {
     configuration.setLoggerLevel("org.sonatype.siesta", DEFAULT);
+    configuration.setLoggerLevel("org.jboss.resteasy", DEFAULT);
     configuration.setLoggerLevel("org.sonatype.nexus.plugins.siesta", DEFAULT);
   }
 }
