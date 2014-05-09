@@ -139,5 +139,4 @@ public class FileBlobStoreIT
     final Blob newBlob = blobStore.get(blob.getId());
     assertThat(newBlob, is(nullValue()));
   }
-
 }
