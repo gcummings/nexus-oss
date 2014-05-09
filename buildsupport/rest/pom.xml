@@ -88,12 +88,6 @@
         <version>${siesta2.version}</version>
       </dependency>
 
-      <dependency>
-        <groupId>org.sonatype.siesta</groupId>
-        <artifactId>siesta-validation</artifactId>
-        <version>${siesta2.version}</version>
-      </dependency>
-
       <!--
       Siesta 1.x
       -->
