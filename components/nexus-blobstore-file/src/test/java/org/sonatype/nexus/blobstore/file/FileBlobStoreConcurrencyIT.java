@@ -61,7 +61,7 @@ public class FileBlobStoreConcurrencyIT
   @Before
   public void init() throws Exception {
     Injector injector = Guice
-        .createInjector(new FileBlobStoreModule(), new TestApplicationDirectoriesProvider());
+        .createInjector(new FileBlobStoreModule(), new TempDirectoryModule());
 
     injector.injectMembers(this);
 

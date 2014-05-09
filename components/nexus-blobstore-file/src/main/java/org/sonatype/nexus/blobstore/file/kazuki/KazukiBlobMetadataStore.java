@@ -69,13 +69,13 @@ public class KazukiBlobMetadataStore
 
   public static final String METADATA_TYPE = "blobdata";
 
-  private Lifecycle lifecycle;
+  private final Lifecycle lifecycle;
 
-  private KeyValueStore kvStore;
+  private final KeyValueStore kvStore;
 
-  private SchemaStore schemaStore;
+  private final SchemaStore schemaStore;
 
-  private SecondaryIndexStore secondaryIndexStore;
+  private final SecondaryIndexStore secondaryIndexStore;
 
   // TODO: These injections imply that there is only one metadata store
   @Inject

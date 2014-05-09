@@ -49,15 +49,15 @@ public class FileBlobStore
 {
   private static final Logger logger = LoggerFactory.getLogger(FileBlobStore.class);
 
-  private String name;
+  private final String name;
 
   private BlobStoreListener listener;
 
-  private FilePathPolicy paths;
+  private final FilePathPolicy paths;
 
-  private FileOperations fileOperations;
+  private final FileOperations fileOperations;
 
-  private BlobMetadataStore metadataStore;
+  private final BlobMetadataStore metadataStore;
 
   @Inject
   public FileBlobStore(final String name, final FilePathPolicy paths, final FileOperations fileOperations,

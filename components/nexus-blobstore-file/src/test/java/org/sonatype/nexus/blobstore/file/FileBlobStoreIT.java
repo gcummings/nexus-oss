@@ -28,6 +28,7 @@ import org.sonatype.sisu.litmus.testsupport.TestSupport;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import com.google.inject.Module;
 import org.apache.commons.io.IOUtils;
 import org.junit.After;
 import org.junit.Before;
@@ -64,7 +65,7 @@ public class FileBlobStoreIT
   @Before
   public void init() throws Exception {
     injector = Guice
-        .createInjector(new FileBlobStoreModule(), new TestApplicationDirectoriesProvider());
+        .createInjector((Module) new FileBlobStoreModule(), new TempDirectoryModule());
 
     injector.injectMembers(this);
 

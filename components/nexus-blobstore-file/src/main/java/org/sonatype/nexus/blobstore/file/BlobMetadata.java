@@ -27,7 +27,7 @@ public class BlobMetadata
 {
   private State state;
 
-  private Map<String, String> headers;
+  private final Map<String, String> headers;
 
   private BlobMetrics metrics;
 

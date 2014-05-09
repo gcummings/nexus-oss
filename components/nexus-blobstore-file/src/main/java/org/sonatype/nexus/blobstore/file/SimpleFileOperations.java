@@ -22,7 +22,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.security.NoSuchAlgorithmException;
 import java.util.Date;
 
-import org.sonatype.nexus.util.DigesterUtils;
+import org.sonatype.nexus.blobstore.file.utils.DigesterUtils;
 
 import com.google.common.io.ByteStreams;
 import org.slf4j.Logger;

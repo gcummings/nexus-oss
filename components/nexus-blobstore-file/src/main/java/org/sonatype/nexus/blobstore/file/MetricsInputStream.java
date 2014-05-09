@@ -18,7 +18,7 @@ import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
-import org.sonatype.nexus.util.DigesterUtils;
+import org.sonatype.nexus.blobstore.file.utils.DigesterUtils;
 
 import com.google.common.io.CountingInputStream;
 

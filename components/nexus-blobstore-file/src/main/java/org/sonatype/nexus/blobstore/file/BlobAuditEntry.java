@@ -30,21 +30,20 @@ public class BlobAuditEntry
     CREATE, DELETE_REQUEST, PURGE;
   }
 
-  private BlobId blobId;
+  private final BlobId blobId;
 
-  private Action action;
+  private final Action action;
 
-  private String blobName;
+  private final String blobName;
 
-  private String blobStoreName;
+  private final String blobStoreName;
 
-  private String principal;
+  private final String principal;
 
-  private DateTime dateTime;
+  private final DateTime dateTime;
 
   public BlobAuditEntry(final String blobStoreName, final BlobId blobId, final Action action, final String blobName,
-                        final String principal,
-                        final DateTime dateTime)
+                        final String principal, final DateTime dateTime)
   {
     checkNotNull(blobStoreName);
     checkNotNull(blobId);
