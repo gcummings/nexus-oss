@@ -63,11 +63,6 @@ public class KazukiBlobMetadataStore
     implements BlobMetadataStore
 {
   /**
-   * A secondary index making it possible to search by blob ID.
-   */
-  private static final String BLOB_ID_INDEX = "uniqueBlobIdIndex";
-
-  /**
    * A secondary index to facilitate searching by blob state.
    */
   private static final String STATE_INDEX = "stateIndex";
@@ -131,8 +126,9 @@ public class KazukiBlobMetadataStore
     lifecycle.shutdown();
   }
 
+  // TODO: All these methods are synchronized due to https://github.com/kazukidb/kazuki/issues/17
   @Override
-  public BlobId add(final BlobMetadata metadata) {
+  public synchronized BlobId add(final BlobMetadata metadata) {
     final FlatBlobMetadata flat = flatten(metadata);
     Key key = null;
     try {
@@ -147,7 +143,7 @@ public class KazukiBlobMetadataStore
 
   @Nullable
   @Override
-  public BlobMetadata get(final BlobId blobId) {
+  public synchronized BlobMetadata get(final BlobId blobId) {
     try {
       final Key key = asKey(checkNotNull(blobId));
       final FlatBlobMetadata metadata = findMetadata(key);
@@ -162,7 +158,7 @@ public class KazukiBlobMetadataStore
   }
 
   @Override
-  public void update(final BlobId blobId, final BlobMetadata metadata) {
+  public synchronized void update(final BlobId blobId, final BlobMetadata metadata) {
     Key key = asKey(checkNotNull(blobId));
     try {
       final FlatBlobMetadata flat = flatten(metadata);
@@ -174,7 +170,7 @@ public class KazukiBlobMetadataStore
   }
 
   @Override
-  public void delete(final BlobId blobId) {
+  public synchronized void delete(final BlobId blobId) {
     checkNotNull(blobId);
     try {
       kvStore.delete(asKey(blobId));
@@ -185,9 +181,10 @@ public class KazukiBlobMetadataStore
   }
 
   @Override
-  public Iterator<BlobId> findWithState(State state) {
+  public synchronized Iterator<BlobId> findWithState(State state) {
     final List<QueryTerm> queryTerms = new QueryBuilder()
-        .andMatchesSingle("stateAsString", QueryOperator.EQ, ValueType.STRING, State.MARKED_FOR_DELETION.toString()).build();
+        .andMatchesSingle("stateAsString", QueryOperator.EQ, ValueType.STRING, State.MARKED_FOR_DELETION.toString())
+        .build();
     final KeyValueIterable<Key> keys = secondaryIndexStore
         .queryWithoutPagination(METADATA_TYPE, FlatBlobMetadata.class, STATE_INDEX, queryTerms, SortDirection.ASCENDING,
             null, null);
@@ -223,7 +220,7 @@ public class KazukiBlobMetadataStore
    * includes blobs that are marked for deletion.
    */
   @Override
-  public MetadataMetrics getMetadataMetrics() {
+  public synchronized MetadataMetrics getMetadataMetrics() {
 
     // TODO: Replace this brute force approach with a counter
     // TODO: Replace the statistics object with kazuki's eventual support for counters
@@ -249,7 +246,7 @@ public class KazukiBlobMetadataStore
     return new MetadataMetrics(blobCount, totalSize);
   }
 
-  public FlatBlobMetadata findMetadata(Key key) throws KazukiException {
+  private FlatBlobMetadata findMetadata(Key key) throws KazukiException {
     checkNotNull(key);
     return kvStore.retrieve(key, FlatBlobMetadata.class);
   }
