@@ -19,6 +19,7 @@ import org.sonatype.nexus.web.internal.SecurityFilter;
 import org.sonatype.siesta.server.SiestaServlet;
 import org.sonatype.siesta.server.internal.resteasy.ResteasyModule;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.AbstractModule;
 import com.google.inject.servlet.ServletModule;
 import org.slf4j.Logger;
@@ -58,7 +59,9 @@ public class SiestaModule
       protected void configureServlets() {
         log.debug("Mount point: {}", MOUNT_POINT);
 
-        serve(MOUNT_POINT + "/*").with(SiestaServlet.class);
+        serve(MOUNT_POINT + "/*").with(SiestaServlet.class, ImmutableMap.of(
+            "resteasy.servlet.mapping.prefix", MOUNT_POINT
+        ));
         filter(MOUNT_POINT + "/*").through(SecurityFilter.class);
       }
     });
