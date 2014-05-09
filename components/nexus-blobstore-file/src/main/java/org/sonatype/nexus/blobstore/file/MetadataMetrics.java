@@ -12,14 +12,19 @@
  */
 package org.sonatype.nexus.blobstore.file;
 
+import org.sonatype.nexus.blobstore.api.BlobStoreMetrics;
+
 /**
+ * Aggregate metrics about the blobs in the blob store, derived from the metadata.  These are used as a component of
+ * the {@link BlobStoreMetrics}, which has other information not stored in in the {@link BlobMetadataStore}.
+ *
  * @since 3.0
  */
 public class MetadataMetrics
 {
-  private long blobCount;
+  private final long blobCount;
 
-  private long totalSize;
+  private final long totalSize;
 
   public MetadataMetrics(final long blobCount, final long totalSize) {
     this.blobCount = blobCount;

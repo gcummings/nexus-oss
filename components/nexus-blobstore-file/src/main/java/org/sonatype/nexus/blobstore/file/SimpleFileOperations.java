@@ -23,6 +23,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Date;
 
 import org.sonatype.nexus.blobstore.file.utils.DigesterUtils;
+import org.sonatype.nexus.util.file.DirSupport;
 
 import com.google.common.io.ByteStreams;
 import org.slf4j.Logger;
@@ -108,7 +109,7 @@ public class SimpleFileOperations
   private synchronized void ensureDirectoryExists(final Path directory) throws IOException {
     checkNotNull(directory);
     if (!exists(directory)) {
-      Files.createDirectories(directory);
+      DirSupport.mkdir(directory);
     }
   }
 }

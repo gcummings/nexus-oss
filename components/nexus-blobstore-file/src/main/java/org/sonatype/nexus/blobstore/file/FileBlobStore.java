@@ -275,13 +275,13 @@ public class FileBlobStore
   class FileBlob
       implements Blob
   {
-    private BlobId blobId;
+    private final BlobId blobId;
 
-    private Map<String, String> headers;
+    private final Map<String, String> headers;
 
-    private Path contentPath;
+    private final Path contentPath;
 
-    private BlobMetrics metrics;
+    private final BlobMetrics metrics;
 
     FileBlob(final BlobId blobId, final Map<String, String> headers, final Path contentPath,
              final BlobMetrics metrics)

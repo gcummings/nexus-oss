@@ -17,6 +17,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.security.NoSuchAlgorithmException;
 
+import org.sonatype.sisu.litmus.testsupport.TestSupport;
+
 import org.junit.Test;
 
 import static com.google.common.io.ByteStreams.copy;
@@ -30,6 +32,7 @@ import static org.hamcrest.Matchers.not;
  * @since 3.0
  */
 public class MetricsInputStreamTest
+    extends TestSupport
 {
   @Test
   public void testLength() throws Exception {
