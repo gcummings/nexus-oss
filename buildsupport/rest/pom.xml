@@ -29,6 +29,7 @@
 
   <properties>
     <siesta.version>1.7</siesta.version>
+    <jersey1.version>1.17.1</jersey1.version>
     <siesta2.version>2.0-SNAPSHOT</siesta2.version>
     <jackson.version>2.3.1</jackson.version>
   </properties>
@@ -95,28 +96,6 @@
       </dependency>
 
       <!--
-      TODO: Remove usage of jacksbee
-      -->
-
-      <dependency>
-        <groupId>org.sonatype.sisu.jacksbee</groupId>
-        <artifactId>jacksbee-runtime</artifactId>
-        <version>1.3</version>
-        <exclusions>
-          <exclusion>
-            <groupId>javax.xml.bind</groupId>
-            <artifactId>jaxb-api</artifactId>
-          </exclusion>
-        </exclusions>
-      </dependency>
-
-      <dependency>
-        <groupId>org.sonatype.sisu.jacksbee</groupId>
-        <artifactId>jacksbee-xjc</artifactId>
-        <version>1.3</version>
-      </dependency>
-
-      <!--
       Jackson 2.x
       -->
 
@@ -142,6 +121,84 @@
         <groupId>com.fasterxml.jackson.jaxrs</groupId>
         <artifactId>jackson-jaxrs-json-provider</artifactId>
         <version>${jackson.version}</version>
+      </dependency>
+
+      <!--
+      Siesta 1.x (for legacy REST client)
+      -->
+
+      <dependency>
+        <groupId>org.sonatype.sisu.siesta</groupId>
+        <artifactId>siesta-common</artifactId>
+        <version>${siesta.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.sonatype.sisu.siesta</groupId>
+        <artifactId>siesta-client</artifactId>
+        <version>${siesta.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>javax.xml.bind</groupId>
+            <artifactId>jaxb-api</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+
+      <dependency>
+        <groupId>org.sonatype.sisu.siesta</groupId>
+        <artifactId>siesta-jackson</artifactId>
+        <version>${siesta.version}</version>
+      </dependency>
+
+      <!--
+      Jacksbee (for legacy REST models)
+      -->
+
+      <dependency>
+        <groupId>org.sonatype.sisu.jacksbee</groupId>
+        <artifactId>jacksbee-runtime</artifactId>
+        <version>1.3</version>
+        <exclusions>
+          <exclusion>
+            <groupId>javax.xml.bind</groupId>
+            <artifactId>jaxb-api</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+
+      <dependency>
+        <groupId>org.sonatype.sisu.jacksbee</groupId>
+        <artifactId>jacksbee-xjc</artifactId>
+        <version>1.3</version>
+      </dependency>
+
+      <!--
+      Jersey 1.x (for legacy REST client)
+      -->
+
+      <dependency>
+        <groupId>com.sun.jersey</groupId>
+        <artifactId>jersey-core</artifactId>
+        <version>${jersey1.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>com.sun.jersey</groupId>
+        <artifactId>jersey-client</artifactId>
+        <version>${jersey1.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>com.sun.jersey.contribs</groupId>
+        <artifactId>jersey-apache-client4</artifactId>
+        <version>${jersey1.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>commons-logging</groupId>
+            <artifactId>commons-logging</artifactId>
+          </exclusion>
+        </exclusions>
       </dependency>
 
     </dependencies>
